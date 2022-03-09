@@ -94,7 +94,8 @@ namespace vehiclemod
             if (Input.GetKeyDown(KeyCode.Escape)) if (Paused) Paused = false; else Paused = true;
             if (Input.GetKeyDown(KeyCode.G)) if (Physics.Raycast(ray, out hit, 5f)) { 
                     MelonLogger.Msg(hit.transform.gameObject.name);
-                    foreach (GameObject i in hit.transform.parent)
+                    GameObject[] par = hit.transform.gameObject.GetComponentsInChildren<GameObject>();
+                    foreach (GameObject i in par)
                     {
                         MelonLogger.Msg(i.name);
                     }
@@ -218,11 +219,11 @@ namespace vehiclemod
             key1.tag = "CarVehicleMod";
             key1.layer = LayerMask.NameToLayer("Player");
 
-            Transform[] i = key1.GetComponentsInChildren<Transform>();
+            GameObject[] par = key1.GetComponentsInChildren<GameObject>();
 
-            foreach (Transform b in i)
+            foreach (GameObject b in par)
             {
-                b.gameObject.layer = LayerMask.NameToLayer("NPC");
+                b.layer = LayerMask.NameToLayer("NPC");
             }
 
             vehicles.Add(PlayerId, key1);
