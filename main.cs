@@ -59,11 +59,6 @@ namespace vehiclemod
             levelname = name;
             Paused = false;
 
-            MelonLogger.Msg("[Garbage Collector] Clearing Vehicle list on level:> " + levelname);
-            vehicles.Clear();
-            vehicledata.Clear();
-            drivers.Clear();
-
             allowdrive = false;
             isSit = false; // SET FALSE BECAUSE LEVEL CHANGED AND CAR ERASED
             targetcar = null;
@@ -89,7 +84,7 @@ namespace vehiclemod
             VehicleController.move = Input.GetAxis("Vertical");
             MyId = API.m_MyClientID;
             MyNick = SkyCoop.MyMod.MyChatName;
-            ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
+            if(GameManager.GetVpFPSCamera().m_Camera) ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
             MyPosition = GameManager.GetPlayerTransform().transform;
             if (Input.GetKeyDown(KeyCode.Escape)) if (Paused) Paused = false; else Paused = true;
             // fuck

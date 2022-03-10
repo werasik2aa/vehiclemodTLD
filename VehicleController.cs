@@ -272,8 +272,8 @@ namespace vehiclemod
 		{
 			if (!fps)
 			{
-				//cameracar.transform.parent = car.transform;
-				cameracar.transform.parent = null;
+				cameracar.transform.parent = car.transform;
+				//cameracar.transform.parent = null;
 				Vector3 range = -Vector3.forward * 6f;
 				float smothspeed = 5f;
 				cameracenter.transform.localRotation = Quaternion.Euler(-curY, -curX, 0);//ROTATE CENTER
