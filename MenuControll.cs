@@ -71,15 +71,16 @@ namespace vehiclemod
         public static void CarStatScreen(string PlayerName, bool allowsit, bool allowdrive, float fuel)
         {
             string[] ch = new string[3];
-            if(allowdrive) 
+            if (allowsit)
                 ch[0] = "Allowed";
             else
                 ch[0] = "Deny";
 
-            if (allowsit) 
+            if (allowdrive) 
                 ch[1] = "Allowed";
             else
                 ch[1] = "Deny";
+
             if (fuel >= 0) ch[2] = Mathf.Round(fuel).ToString();
             if (NameTag) NameTag.text = "Vehicle by: " + PlayerName + Environment.NewLine + "Can you SIT?: " + ch[0] + Environment.NewLine + "CAN You DRIVE?: " + ch[1] + Environment.NewLine + "FUEL: "+ch[2];
         }

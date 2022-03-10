@@ -28,6 +28,16 @@ namespace vehiclemod
             packet.Write(rot);
             Send(packet);
         }
+        public static void NETSIT(int CarID, int SitID)
+        {
+            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
+            Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
+
+            packet.Write(1111);
+            packet.Write(CarID);
+            packet.Write(SitID);
+            Send(packet);
+        }
         public static void NetDeleteCar()
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;

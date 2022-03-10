@@ -59,6 +59,11 @@ namespace vehiclemod
             levelname = name;
             Paused = false;
 
+            MelonLogger.Msg("[Garbage Collector] Clearing Vehicle list on level:> " + levelname);
+            vehicles.Clear();
+            vehicledata.Clear();
+            drivers.Clear();
+
             allowdrive = false;
             isSit = false; // SET FALSE BECAUSE LEVEL CHANGED AND CAR ERASED
             targetcar = null;
@@ -79,12 +84,12 @@ namespace vehiclemod
         }
         public override void OnUpdate()
         {
-            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "") return;
+            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || GameManager.m_IsPaused) return;
             VehicleController.turn = Input.GetAxis("Horizontal");
             VehicleController.move = Input.GetAxis("Vertical");
             MyId = API.m_MyClientID;
             MyNick = SkyCoop.MyMod.MyChatName;
-            if(GameManager.GetVpFPSCamera().m_Camera) ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
+            if(vehicles.Count > 0) ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
             MyPosition = GameManager.GetPlayerTransform().transform;
             if (Input.GetKeyDown(KeyCode.Escape)) if (Paused) Paused = false; else Paused = true;
             // fuck
@@ -148,11 +153,11 @@ namespace vehiclemod
         }
         public override void OnLateUpdate()
         {
-            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "") return;
+            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || GameManager.m_IsPaused) return;
 
             if (vehicles.ContainsKey(MyId) && !isDrive(MyId))
                 sendMycarPos(2);
-            if(isSit) SkyCoop.MyMod.MyAnimState = "Sit";
+            if(isSit && vehicles.Count > 0) SkyCoop.MyMod.MyAnimState = "Sit";
             MenuControll.Update(0); // COUNT CARS
             MenuControll.Update(1); // COOUNT SPEED
             MenuControll.Update(2); // COUNT FUEL
@@ -166,9 +171,10 @@ namespace vehiclemod
                     string othname = "Unknown";
                     try { number = int.Parse(ho.name); } catch (Exception e) { return; }
                     if (!vehicledata.ContainsKey(number)) return;
+                    if (GetObj(number).transform.Find("CAMERACENTER")) return;
+
                     othname = SkyCoop.MyMod.playersData[number].m_Name;
                     if (number == MyId) othname = MyNick;
-                    if (!vehicledata.ContainsKey(number)) return;
 
                     MenuControll.Open(2);
                     MenuControll.CarStatScreen(othname, bool.Parse(CarData(number)[0]), !isDrive(number), Mathf.Round(VehicleController.curfuel));
@@ -183,7 +189,7 @@ namespace vehiclemod
         }
         public override void OnFixedUpdate()
         {
-            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "") return;
+            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || GameManager.m_IsPaused) return;
             if (vehicles.Count != 0) foreach (var i in vehicles) if (i.Value) VehicleController.wheel(i.Value);
             if (isSit) VehicleController.MoveDrive(targetcar);
         }
@@ -224,7 +230,6 @@ namespace vehiclemod
             key1.layer = LayerMask.NameToLayer("Player");
 
             GameObject[] par = key1.GetComponentsInChildren<GameObject>();
-
             foreach (GameObject b in par)
             {
                 b.layer = LayerMask.NameToLayer("NPC");

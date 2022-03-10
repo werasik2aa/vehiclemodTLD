@@ -21,7 +21,7 @@ namespace vehiclemod
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from)) VehicleController.PlayerCarMove(ID, name, Position, Rotation);
+                if (CheckEnv(from) && data.GetObj(ID)) VehicleController.PlayerCarMove(ID, name, Position, Rotation);
             }
 
             if (packetid == 1000) // SPAWN CAR
@@ -71,7 +71,7 @@ namespace vehiclemod
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from)) VehicleController.engineSound(curspeed, ID);
+                if (CheckEnv(from) && data.GetObj(ID)) VehicleController.engineSound(curspeed, ID);
             }
             if (packetid == 1110) // SEND Sound OFF
             {
@@ -82,7 +82,18 @@ namespace vehiclemod
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from)) VehicleController.engineSoundOff(ID);
+                if (CheckEnv(from) && data.GetObj(ID)) VehicleController.engineSoundOff(ID);
+            }
+            if (packetid == 1111) // SEND Sound OFF
+            {
+                int ID = _pak.ReadInt();
+                int SitID = _pak.ReadInt();
+                if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT)
+                {
+                    from = _pak.ReadInt();
+                }
+                if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
+                if (CheckEnv(from) && data.GetObj(ID)) VehicleController.CHANGESIT(data.GetObj(ID), SitID, from);
             }
         }
         private static bool CheckEnv(int from)
