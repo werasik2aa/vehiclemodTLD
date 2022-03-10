@@ -7,3 +7,5 @@
 2. Unzip all content in zip file to the folder MODS -->> #####\The Long Dark\Mods\
 3. Download SkyCO-OP from https://github.com/Filigrani/SkyCoop
 4. Play :)
+
+My ds nopirateonlysteam#9956
