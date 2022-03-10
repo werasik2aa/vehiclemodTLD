@@ -1,6 +1,6 @@
 # vehiclemodTLD
 ## For The Long dark. DRIVE, MOVE, AND OTHER THINGS
-[](https://www.youtube.com/watch?v=cRsXpfYhrgk "Youtube Video")https://www.youtube.com/watch?v=cRsXpfYhrgk
+[](https://www.youtube.com/watch?v=cRsXpfYhrgk "Youtube Video")
 [![](https://i.ibb.co/fN7CKP5/unknown.png)]
 ## HOW TO INSTALL
 1. Download mod
