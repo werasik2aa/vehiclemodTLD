@@ -115,7 +115,8 @@ namespace vehiclemod
 
 			Rigidbody rb = car.GetComponent<Rigidbody>();
 
-			if (rb) foreach (var i in wheels)
+			if (rb) 
+				foreach (var i in wheels)
 				{
 					if (!i) return;
 					Transform wh = i.transform.Find("1");
@@ -177,20 +178,21 @@ namespace vehiclemod
 					col.enabled = true;
 				}
 				cameracar.gameObject.SetActive(false);
-				GameManager.GetVpFPSPlayer().transform.parent = null;
-				GameManager.GetPlayerTransform().transform.parent = null;
-				GameManager.GetPlayerManagerComponent().TeleportPlayer(main.MyPosition.position - car.transform.right * 2.5f + car.transform.up, Quaternion.identity);
-				GameManager.GetPlayerManagerComponent().StickPlayerToGround();
+				
 				MenuControll.Open(1);
 				if(audio) audio.Stop();
 				NetSoundOff(int.Parse(car.name));
+				CHANGESIT(car, 0);
 			}
 			else
 			{
 				if (main.allowdrive)
 				{
 					data.UpdateDriver(int.Parse(car.name), true);
+					CHANGESIT(car, 1);
 					NetSendDriver(int.Parse(car.name), true);
+                }else {
+					CHANGESIT(car, 2);
 				}
 				foreach (Collider col in GameManager.GetVpFPSPlayer().GetComponents<Collider>())
 				{
@@ -206,11 +208,6 @@ namespace vehiclemod
 				cameracenter = car.transform.Find("CAMERACENTER");
 				cameracar.transform.position = car.transform.Find("CAMERACENTER").position;
 				main.targetcar = car;
-				Transform sit = car.transform.Find("SIT1");
-				GameManager.GetVpFPSPlayer().transform.position = sit.position;
-				GameManager.GetPlayerTransform().transform.position = sit.position;
-				GameManager.GetVpFPSPlayer().transform.parent = car.transform;
-				GameManager.GetPlayerTransform().transform.parent = car.transform;
 			}
 			MelonLogger.Msg("[Sit Manager]: " + main.allowdrive + "|" +isDrive(int.Parse(car.name)));
 		}
@@ -222,12 +219,11 @@ namespace vehiclemod
 
 			if (!audio.isPlaying && audio)
 			{
-				audio.maxDistance = 30f;
-				audio.minDistance = 0f;
-				var dist = Vector3.Distance(main.MyPosition.position,GetObj(ID).transform.position); ;
-				if (dist > 10) audio.volume = dist * 0.05f;
-				if (dist > 20) audio.volume = dist * 0.05f * 0.5f;
-				if (dist < 1) audio.volume = dist;
+				var dist = Vector3.Distance(GetObj(ID).transform.position, main.MyPosition.position); ;
+
+				if (dist > 10) audio.volume = dist / 20f;
+				if (dist > 20) audio.volume = dist / 50f;
+				if (dist <= 1) audio.volume = dist;
 				audio.pitch = (0.30f + curspeed * 0.025f);
 				if (curspeed > 30)
 				{
@@ -248,16 +244,35 @@ namespace vehiclemod
 				}
 			}
 		}
+		private static void CHANGESIT(GameObject car, int i)
+        {
+			if(i == 0)
+            {
+				GameManager.GetVpFPSPlayer().transform.parent = null;
+				GameManager.GetPlayerTransform().transform.parent = null;
+				GameManager.GetPlayerManagerComponent().TeleportPlayer(main.MyPosition.position - car.transform.right * 2.5f + car.transform.up, Quaternion.identity);
+				GameManager.GetPlayerManagerComponent().StickPlayerToGround();
+			}
+			if (main.allowdrive)
+			{
+				Transform sit = car.transform.Find("SIT"+i);
+				GameManager.GetVpFPSPlayer().transform.position = sit.position;
+				GameManager.GetPlayerTransform().transform.position = sit.position;
+				GameManager.GetVpFPSPlayer().transform.parent = car.transform;
+				GameManager.GetPlayerTransform().transform.parent = car.transform;
+			}
+		}
 		public static void engineSoundOff(int ID)
 		{
 			if (!data.GetObj(ID)) return;
-			audio =GetObj(ID).GetComponent<AudioSource>();
+			audio = GetObj(ID).GetComponent<AudioSource>();
 			if(audio) audio.Stop();
 		}
 			private static void CameraFollow(GameObject car)
 		{
 			if (!fps)
 			{
+				//cameracar.transform.parent = car.transform;
 				cameracar.transform.parent = null;
 				Vector3 range = -Vector3.forward * 6f;
 				float smothspeed = 5f;
@@ -271,7 +286,7 @@ namespace vehiclemod
 			{
 				cameracar.transform.parent = car.transform;
 				cameracar.transform.localRotation = Quaternion.Euler(-curY, curX, 0);
-				cameracar.transform.position = car.transform.Find("SIT1").position + car.transform.up * 1.75f;
+				cameracar.transform.position = car.transform.Find("SIT1").position + car.transform.up * 1.7f;
 			}
 		}
 	}

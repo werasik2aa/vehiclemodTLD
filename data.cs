@@ -16,14 +16,10 @@ namespace vehiclemod
         }
         public static String[] CarData(int ID)
         {
-            try
-            {
                 if (main.vehicledata.TryGetValue(ID, out String ss))
                     return ss.Split('+');
                 else
                     return null;
-            }
-            catch { return null; }
         }
         public static void UpdateCarData(int PlayerId, bool allowdrive, bool allowsit, float fuel, string name)
         {
@@ -41,24 +37,16 @@ namespace vehiclemod
         public static void UpdateDriver(int ID, bool state)
         {
             if (main.drivers.TryGetValue(ID, out bool b))
-                if (b != state)
                     main.drivers[ID] = state;
                 else
                     main.drivers.Add(ID, state);
         }
         public static bool isDrive(int ID)
         {
-            try
-            {
                 if (main.drivers.TryGetValue(ID, out bool i))
                     return i;
                 else
                     return false;
-            }
-            catch
-            {
-                return false;
-            }
         }
         public static GameObject GetObj(int ID)
         {

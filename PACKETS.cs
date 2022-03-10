@@ -53,16 +53,16 @@ namespace vehiclemod
             if (packetid == 1010) // SEND Driver
             {
                 int ID = _pak.ReadInt();
-                bool sit = _pak.ReadBool();
+                bool drived = _pak.ReadBool();
 
                 if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT)
                 {
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from)) data.UpdateDriver(ID, sit);
+                if (CheckEnv(from)) data.UpdateDriver(ID, drived);
             }
-            if (packetid == 1100) // SEND Sound
+            if (packetid == 1100) // SEND Sound ON
             {
                 int curspeed = _pak.ReadInt();
                 int ID = _pak.ReadInt();
@@ -73,7 +73,7 @@ namespace vehiclemod
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
                 if (CheckEnv(from)) VehicleController.engineSound(curspeed, ID);
             }
-            if (packetid == 1110) // SEND Sound
+            if (packetid == 1110) // SEND Sound OFF
             {
                 int ID = _pak.ReadInt();
 

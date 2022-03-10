@@ -32,20 +32,20 @@ namespace vehiclemod
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
+
             packet.Write(0100);
             packet.Write(1);
 
             Send(packet);
         }
-        public static void NetSendDriver(int ID, bool i)
+        public static void NetSendDriver(int ID, bool drived)
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(1010);
-
             packet.Write(ID);
-            packet.Write(i);
+            packet.Write(drived);
 
             Send(packet);
         }
@@ -54,6 +54,7 @@ namespace vehiclemod
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
+
             packet.Write(0000);
             packet.Write(CarName);
             packet.Write(CarID);
@@ -66,6 +67,7 @@ namespace vehiclemod
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
+
             packet.Write(1000);
             packet.Write(name);
             packet.Write(Position);
@@ -77,6 +79,7 @@ namespace vehiclemod
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
+
             packet.Write(1100);
             packet.Write(curspeed);
             packet.Write(ID);
@@ -87,6 +90,7 @@ namespace vehiclemod
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
+
             packet.Write(1110);
             packet.Write(ID);
 

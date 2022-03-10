@@ -92,15 +92,21 @@ namespace vehiclemod
             ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
             MyPosition = GameManager.GetPlayerTransform().transform;
             if (Input.GetKeyDown(KeyCode.Escape)) if (Paused) Paused = false; else Paused = true;
-            if (Input.GetKeyDown(KeyCode.G)) if (Physics.Raycast(ray, out hit, 5f)) { 
-                    MelonLogger.Msg(hit.transform.gameObject.name);
-                    GameObject[] par = hit.transform.gameObject.GetComponentsInChildren<GameObject>();
-                    foreach (GameObject i in par)
-                    {
-                        MelonLogger.Msg(i.name);
-                    }
+            // fuck
+            if (Input.GetKeyDown(KeyCode.G))
+            {
+                if (Physics.Raycast(ray, out hit, 3f))
+                {
+                    string ss = "obj_cartruckbase";
+                        Collider[] hitColliders = Physics.OverlapSphere(hit.point, 12f);
+                        foreach (var gj in hitColliders)
+                        {
+                            if(gj.name.ToLower().StartsWith(ss))
+                            gj.gameObject.transform.parent = GameManager.GetVpFPSPlayer().transform;
+                        }
                 }
-                    if (Input.GetKeyDown(KeyCode.E))// f////////////////////////////////////////////////
+            }
+            if (Input.GetKeyDown(KeyCode.E))
             {
                 int number = -1;
                 if (!isSit && Physics.Raycast(ray, out hit, 5f))
@@ -142,8 +148,8 @@ namespace vehiclemod
         private IEnumerator sendMycarPos(float waitTime)
         {
             yield return new WaitForSeconds(waitTime);
-            if(GetObj(MyId)) 
-                NETHost.NetCar(MyId, data.CarData(MyId)[0], data.GetObj(MyId).transform.position, data.GetObj(MyId).transform.rotation);
+            if (GetObj(MyId))
+                NETHost.NetCar(MyId, CarData(MyId)[0], GetObj(MyId).transform.position, GetObj(MyId).transform.rotation);
         }
         public override void OnLateUpdate()
         {
@@ -151,7 +157,7 @@ namespace vehiclemod
 
             if (vehicles.ContainsKey(MyId) && !isDrive(MyId))
                 sendMycarPos(2);
-
+            if(isSit) SkyCoop.MyMod.MyAnimState = "Sit";
             MenuControll.Update(0); // COUNT CARS
             MenuControll.Update(1); // COOUNT SPEED
             MenuControll.Update(2); // COUNT FUEL
@@ -171,7 +177,9 @@ namespace vehiclemod
 
                     MenuControll.Open(2);
                     MenuControll.CarStatScreen(othname, bool.Parse(CarData(number)[0]), !isDrive(number), Mathf.Round(VehicleController.curfuel));
-                } else {
+                }
+                else
+                {
                     MenuControll.Open(22);
                 }
             }
@@ -186,11 +194,12 @@ namespace vehiclemod
         }
         public static Boolean deletecar(int PlayerId, int who)
         {
-            if (GetObj(PlayerId)) {
+            if (GetObj(PlayerId))
+            {
                 MelonLogger.Msg("[Car spawner] Car Already exist, Deleting it:> " + PlayerId);
                 GameObject.Destroy(GetObj(PlayerId));
                 vehicles.Remove(PlayerId);
-                if(who == 0) vehicledata.Remove(PlayerId);
+                if (who == 0) vehicledata.Remove(PlayerId);
                 return true;
             }
             return false;
@@ -205,7 +214,7 @@ namespace vehiclemod
             if (PlayerId == MyId && a) if (deletecar(MyId, 0)) NETHost.NetDeleteCar();
 
 
-            GameObject key1 = data.LoadObject(name);
+            GameObject key1 = LoadObject(name);
 
             if (!key1) { MelonLogger.Msg("[Car spawner] This Car Doesn't exist: " + name); return; }
             if (Position == Vector3.zero)
@@ -224,6 +233,7 @@ namespace vehiclemod
             foreach (GameObject b in par)
             {
                 b.layer = LayerMask.NameToLayer("NPC");
+                if (b.name == "BAGAGE") b.layer = LayerMask.NameToLayer("Container");
             }
 
             vehicles.Add(PlayerId, key1);
@@ -231,8 +241,8 @@ namespace vehiclemod
             {
                 NETHost.NetSpawnCar(name, key1.transform.position, key1.transform.rotation);
             }
-            data.UpdateDriver(PlayerId, false);
-            data.UpdateCarData(PlayerId, true, true, 50, name);
+            UpdateDriver(PlayerId, false);
+            UpdateCarData(PlayerId, true, true, 50, name);
         }
         private void loot(GameObject bagage)
         {
@@ -245,15 +255,13 @@ namespace vehiclemod
             }
 
             if (guid == null)
-                guidCmp.Set(MyId.ToString());
+                guidCmp.Set(bagage.transform.root.name.ToString());
 
             if (!container)
             {
                 bagage.AddComponent<Container>();
                 container.GetComponent<Container>().m_Inspected = true;
             }
-
-            guidCmp.Set(bagage.transform.parent.name.ToString());
         }
     }
 }
