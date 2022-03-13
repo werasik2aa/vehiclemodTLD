@@ -50,6 +50,7 @@ namespace vehiclemod
         }
         public static GameObject GetObj(int ID)
         {
+            if (main.vehicles.Count == 0) return null;
             if (main.vehicles.TryGetValue(ID, out GameObject g))
                 return g;
             else

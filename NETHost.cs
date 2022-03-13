@@ -106,6 +106,17 @@ namespace vehiclemod
 
             Send(packet);
         }
+        public static void NetLightOn(int ID, bool state)
+        {
+            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
+            Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
+
+            packet.Write(1101);
+            packet.Write(ID);
+            packet.Write(state);
+
+            Send(packet);
+        }
         private static void Send(Packet packet)
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST)

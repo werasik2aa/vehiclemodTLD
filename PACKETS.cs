@@ -71,7 +71,7 @@ namespace vehiclemod
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from) && data.GetObj(ID)) VehicleController.engineSound(curspeed, ID);
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.EngineSound(curspeed, ID, 1);
             }
             if (packetid == 1110) // SEND Sound OFF
             {
@@ -82,9 +82,9 @@ namespace vehiclemod
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from) && data.GetObj(ID)) VehicleController.engineSoundOff(ID);
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.EngineSound(0, ID, 0);
             }
-            if (packetid == 1111) // SEND Sound OFF
+            if (packetid == 1111) // SIT SIT POS
             {
                 int ID = _pak.ReadInt();
                 int SitID = _pak.ReadInt();
@@ -93,7 +93,18 @@ namespace vehiclemod
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from) && data.GetObj(ID)) VehicleController.CHANGESIT(data.GetObj(ID), SitID, from);
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.CHANGESIT(ID, SitID, from);
+            }
+            if (packetid == 1101) // Turn LIGHT
+            {
+                int ID = _pak.ReadInt();
+                bool state = _pak.ReadBool();
+                if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT)
+                {
+                    from = _pak.ReadInt();
+                }
+                if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.CarLight(ID, state);
             }
         }
         private static bool CheckEnv(int from)
