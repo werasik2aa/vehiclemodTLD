@@ -108,7 +108,12 @@ namespace vehiclemod
         }
         public override void OnUpdate()
         {
-            if (GameManager.GetVpFPSPlayer() && !VehicleController.myparent) VehicleController.myparent = GameManager.GetVpFPSPlayer().transform.root.parent;
+            if (VehicleController.move != 0 && main.allowdrive) //ACELERATION
+                VehicleController.accel += 5 * Time.deltaTime;
+            else
+                VehicleController.accel = 1;
+
+            if (GameManager.GetVpFPSPlayer() && !VehicleController.myparent) VehicleController.myparent = GameManager.GetVpFPSPlayer().transform.root;
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetVpFPSPlayer()) return;
             VehicleController.turn = Input.GetAxis("Horizontal");
             VehicleController.move = Input.GetAxis("Vertical");
@@ -194,8 +199,11 @@ namespace vehiclemod
 
             if (vehicles.ContainsKey(MyId) && !isDrive(MyId))
                 sendMycarPos(2);
-
-            if (isSit && vehicles.Count > 0)
+            if (!isSit)
+            {
+                GameManager.GetVpFPSPlayer().transform.root.parent = VehicleController.myparent;
+            }
+                if (isSit)
             {
                 SkyCoop.MyMod.MyAnimState = "Sit";
             }
@@ -239,6 +247,7 @@ namespace vehiclemod
             if (GetObj(PlayerId))
             {
                 MelonLogger.Msg("[Car spawner] Car Already exist, Deleting it:> " + PlayerId);
+                GameManager.GetVpFPSPlayer().transform.root.parent = VehicleController.myparent;
                 GameObject.Destroy(GetObj(PlayerId));
                 vehicles.Remove(PlayerId);
                 UpdateDriver(PlayerId, false);
@@ -288,17 +297,18 @@ namespace vehiclemod
         }
         private void loot(GameObject bagage)
         {
-            var container = bagage.GetComponent<Container>();
-            var guidCmp = bagage.GetComponent<ObjectGuid>();
+            Container container = bagage.GetComponent<Container>();
 
-            if (!guidCmp)
+            if (!container)
             {
+                var guidCmp = bagage.GetComponent<ObjectGuid>();
                 bagage.AddComponent<ObjectGuid>();
                 guidCmp = bagage.GetComponent<ObjectGuid>();
                 guidCmp.Set(SkyCoop.MyMod.level_guid);
                 bagage.AddComponent<Container>();
                 container.GetComponent<Container>().m_Inspected = true;
             }
+            container.Open();
         }
         public static bool allowed(GameObject go)
         {

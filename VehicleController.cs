@@ -50,11 +50,6 @@ namespace vehiclemod
 			rb.centerOfMass = Vector3.down * 0.9f;
 			curspeed = rb.velocity.magnitude;
 
-			if (move != 0 && main.allowdrive) //ACELERATION
-				accel += 5 * Time.deltaTime;
-			else
-				accel = 1;
-
 			accel = Mathf.Clamp(accel, 0, maxaccel);
 			if (main.allowdrive)
 			{
@@ -81,8 +76,8 @@ namespace vehiclemod
 						// 2 - Flat wheel   \\
 						if ((wheels[0] == i || wheels[1] == i) && (wh || wh2))
 						{
-							if (wh && main.allowdrive) wh.localRotation = Quaternion.Euler(0, turn * 40, 0);// VISUAL WHEEL 1 FL
-							if (wh && main.allowdrive) wh.localRotation = Quaternion.Euler(0, turn * 40, 0);// VISUAL WHEEL 1 FR
+							if (wh && main.allowdrive) wh.localRotation = Quaternion.Euler(0, turn * 30, 0);// VISUAL WHEEL 1 FL
+							if (wh && main.allowdrive) wh.localRotation = Quaternion.Euler(0, turn * 30, 0);// VISUAL WHEEL 1 FR
 							if (wh2 && main.allowdrive) wh2.localRotation = Quaternion.Euler(0, 0, turn * 30);// VISUAL WHEEL 2 FL
 							if (wh2 && main.allowdrive) wh2.localRotation = Quaternion.Euler(0, 0, turn * 30);// VISUAL WHEEL 2 FR
 						}
@@ -160,7 +155,6 @@ namespace vehiclemod
 		}
 		public static void SitCar(int number, int chair)
 		{
-			myparent = GameManager.GetVpFPSPlayer().transform.parent;
 			GameObject car = GetObj(number);
 			siter = chair;
 			if (main.isSit)
@@ -170,7 +164,6 @@ namespace vehiclemod
 					data.UpdateDriver(number, false);
 					NETHost.NetSendDriver(number, false);
 				}
-				GameManager.GetVpFPSPlayer().transform.root.parent = myparent;
 
 				GameManager.GetPlayerManagerComponent().TeleportPlayer(main.MyPosition.position - car.transform.right * 3f + car.transform.up, Quaternion.identity);
 				GameManager.GetPlayerManagerComponent().StickPlayerToGround();
@@ -260,13 +253,13 @@ namespace vehiclemod
 			sit = car.transform.Find("SIT" + i);
 			if (i == 0)
 			{
-				SkyCoop.MyMod.players[from].transform.parent = null;
+				SkyCoop.MyMod.players[from].transform.root.parent = null;
 			}
 			if (sit)
 			{
-				SkyCoop.MyMod.players[from].transform.position = sit.position;
-				SkyCoop.MyMod.players[from].transform.position = Vector3.Lerp(SkyCoop.MyMod.players[from].transform.position, sit.position, 15);
-				SkyCoop.MyMod.players[from].transform.parent = car.transform;
+				SkyCoop.MyMod.players[from].transform.root.parent = car.transform;
+				SkyCoop.MyMod.players[from].transform.root.position = sit.position;
+				SkyCoop.MyMod.players[from].transform.root.position = Vector3.Lerp(SkyCoop.MyMod.players[from].transform.position, sit.position, 1111);
 			}
 		}
 		private static void CameraFollow(GameObject car)
