@@ -104,7 +104,7 @@ namespace vehiclemod
 
             }
             VehicleController.myparent = GameManager.GetVpFPSPlayer().transform.parent;
-            GameManager.GetVpFPSPlayer().transform.root.parent = VehicleController.myparent;
+            if(VehicleController.myparent) GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
         }
         public override void OnUpdate()
         {
@@ -113,7 +113,6 @@ namespace vehiclemod
             else
                 VehicleController.accel = 1;
 
-            if (GameManager.GetVpFPSPlayer() && !VehicleController.myparent) VehicleController.myparent = GameManager.GetVpFPSPlayer().transform.root;
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetVpFPSPlayer()) return;
             VehicleController.turn = Input.GetAxis("Horizontal");
             VehicleController.move = Input.GetAxis("Vertical");
@@ -183,7 +182,6 @@ namespace vehiclemod
             {
                 MenuControll.openmenu.gameObject.SetActive(false);
                 if (MenuControll.MenuMainCars) MenuControll.MenuMainCars.gameObject.SetActive(false);
-
             }
         }
         private IEnumerator sendMycarPos(float waitTime)
@@ -197,12 +195,13 @@ namespace vehiclemod
         {
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetVpFPSPlayer()) return;
 
-            if (vehicles.ContainsKey(MyId) && !isDrive(MyId))
-                sendMycarPos(2);
             if (!isSit)
             {
-                GameManager.GetVpFPSPlayer().transform.root.parent = VehicleController.myparent;
+                GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
             }
+
+            if (vehicles.ContainsKey(MyId) && !isDrive(MyId))
+                sendMycarPos(2);
                 if (isSit)
             {
                 SkyCoop.MyMod.MyAnimState = "Sit";
@@ -220,7 +219,7 @@ namespace vehiclemod
                     string othname = "Unknown";
                     try { number = int.Parse(ho.name); } catch { return; }
                     if (!vehicledata.ContainsKey(number)) return;
-                    if (!GetObj(number).transform.root.Find("CAMERACENTER")) return;
+                    if (!GetObj(number).transform.parent.Find("CAMERACENTER")) return;
 
                     othname = SkyCoop.MyMod.playersData[number].m_Name;
                     if (number == MyId) othname = MyNick;
@@ -247,11 +246,14 @@ namespace vehiclemod
             if (GetObj(PlayerId))
             {
                 MelonLogger.Msg("[Car spawner] Car Already exist, Deleting it:> " + PlayerId);
-                GameManager.GetVpFPSPlayer().transform.root.parent = VehicleController.myparent;
                 GameObject.Destroy(GetObj(PlayerId));
                 vehicles.Remove(PlayerId);
                 UpdateDriver(PlayerId, false);
-                if (who == 0) vehicledata.Remove(PlayerId);
+                if (who == 0)
+                {
+                    GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
+                    vehicledata.Remove(PlayerId);
+                }
                 return true;
             }
             return false;
@@ -308,7 +310,12 @@ namespace vehiclemod
                 bagage.AddComponent<Container>();
                 container.GetComponent<Container>().m_Inspected = true;
             }
+            container.m_NotPopulated = false;
+            container.m_GearToInstantiate.Clear();
+            container.UpdateContainer();
+            container.name = "BAGAGE";
             container.Open();
+
         }
         public static bool allowed(GameObject go)
         {
@@ -318,7 +325,7 @@ namespace vehiclemod
             if (!container)
                 return false;
 
-            if (go.GetComponent<Lock>()?.m_LockState == LockState.Locked)
+            if (go.GetComponent<Lock>().m_LockState == LockState.Locked)
                 return false;
 
             if (!container.IsInspected())

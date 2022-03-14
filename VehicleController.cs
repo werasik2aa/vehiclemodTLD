@@ -202,7 +202,7 @@ namespace vehiclemod
 				cameracar.transform.position = cameracenter.position;
 				main.isSit = true;
 				GameManager.GetVpFPSPlayer().transform.position = sit.position;
-				GameManager.GetVpFPSPlayer().transform.root.parent = sit.transform;
+				GameManager.GetVpFPSPlayer().transform.SetParent(sit);
 			}
 			MelonLogger.Msg("[Sit Manager]: " + main.allowdrive + "|" + isDrive(number));
 		}
@@ -257,9 +257,7 @@ namespace vehiclemod
 			}
 			if (sit)
 			{
-				SkyCoop.MyMod.players[from].transform.root.parent = car.transform;
-				SkyCoop.MyMod.players[from].transform.root.position = sit.position;
-				SkyCoop.MyMod.players[from].transform.root.position = Vector3.Lerp(SkyCoop.MyMod.players[from].transform.position, sit.position, 1111);
+				SkyCoop.MyMod.playersData[from].m_Position = sit.position;
 			}
 		}
 		private static void CameraFollow(GameObject car)
