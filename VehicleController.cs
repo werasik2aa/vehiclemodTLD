@@ -167,7 +167,7 @@ namespace vehiclemod
 
 				GameManager.GetPlayerManagerComponent().TeleportPlayer(main.MyPosition.position - car.transform.right * 3f + car.transform.up, Quaternion.identity);
 				GameManager.GetPlayerManagerComponent().StickPlayerToGround();
-				foreach (Collider col in GameManager.GetVpFPSPlayer().GetComponents<Collider>())
+				foreach (Collider col in GameManager.GetPlayerTransform().GetComponents<Collider>())
 				{
 					col.enabled = true;
 				}
@@ -188,7 +188,7 @@ namespace vehiclemod
 					data.UpdateDriver(number, true);
 					NETHost.NetSendDriver(number, true);
 				}
-				foreach (Collider col in GameManager.GetVpFPSPlayer().GetComponents<Collider>())
+				foreach (Collider col in GameManager.GetPlayerTransform().GetComponents<Collider>())
 				{
 					col.enabled = false;
 				}
@@ -201,8 +201,9 @@ namespace vehiclemod
 				cameracenter = car.transform.Find("CAMERACENTER");
 				cameracar.transform.position = cameracenter.position;
 				main.isSit = true;
-				GameManager.GetVpFPSPlayer().transform.position = sit.position;
-				GameManager.GetVpFPSPlayer().transform.SetParent(sit);
+				
+				GameManager.GetPlayerTransform().transform.position = sit.position;
+				GameManager.GetPlayerTransform().transform.SetParent(sit);
 			}
 			MelonLogger.Msg("[Sit Manager]: " + main.allowdrive + "|" + isDrive(number));
 		}
@@ -257,16 +258,14 @@ namespace vehiclemod
 			}
 			if (sit)
 			{
-				SkyCoop.MyMod.players[from].transform.root.parent = sit;
 				SkyCoop.MyMod.playersData[from].m_Position = sit.position;
-				SkyCoop.MyMod.players[from].transform.position = sit.position;
 			}
 		}
 		private static void CameraFollow(GameObject car)
 		{
 			if (!fps)
 			{
-				cameracar.transform.SetParent(null);
+				cameracar.transform.SetParent(car.transform);
 				Vector3 range = -Vector3.forward * 6f;
 				float smothspeed = 5f;
 				cameracenter.transform.localRotation = Quaternion.Euler(-curY, -curX, 0);//ROTATE CENTER

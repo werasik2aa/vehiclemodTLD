@@ -28,7 +28,7 @@ namespace vehiclemod
 
         //LEVEL PART
         public static int levelid = 0;
-        private string levelname = "";
+        public static string levelname = "";
         public static int MyId = 0;
         private static string MyNick;
 
@@ -103,8 +103,8 @@ namespace vehiclemod
                 VehicleController.cameracar = newcam;
 
             }
-            VehicleController.myparent = GameManager.GetVpFPSPlayer().transform.parent;
-            if(VehicleController.myparent) GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
+            VehicleController.myparent = GameManager.GetPlayerTransform().transform.parent;
+            
         }
         public override void OnUpdate()
         {
@@ -112,13 +112,11 @@ namespace vehiclemod
                 VehicleController.accel += 5 * Time.deltaTime;
             else
                 VehicleController.accel = 1;
-
-            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetVpFPSPlayer()) return;
-            GameManager.m_AsyncSceneLoadsInProgress.TryGetValue(levelname, out bool f);
-            if (!isSit && f)
+            if (SkyCoop.MyMod.LoadingScreenIsOn && VehicleController.myparent)
             {
-                GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
+                GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
             }
+            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;
             VehicleController.turn = Input.GetAxis("Horizontal");
             VehicleController.move = Input.GetAxis("Vertical");
             MyId = API.m_MyClientID;
@@ -198,12 +196,17 @@ namespace vehiclemod
         }
         public override void OnLateUpdate()
         {
-            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetVpFPSPlayer()) return;
+            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;
+
+            if (!isSit)
+            {
+                GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
+            }
 
             if (vehicles.ContainsKey(MyId) && !isDrive(MyId))
                 sendMycarPos(2);
-
-            if (isSit) {
+            if (isSit)
+            {
                 SkyCoop.MyMod.MyAnimState = "Sit";
             }
             MenuControll.Update(0); // COUNT CARS
@@ -237,23 +240,24 @@ namespace vehiclemod
         }
         public override void OnFixedUpdate()
         {
-            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetVpFPSPlayer()) return;
+            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;
             if (vehicles.Count != 0) foreach (var i in vehicles) if (i.Value) VehicleController.wheel(int.Parse(i.Value.name));
             if (isSit) VehicleController.MoveDrive(targetcar);
         }
         public static bool deletecar(int PlayerId, int who)
         {
-            if (GetObj(PlayerId))
+            if (GetObj(PlayerId) && !isDrive(PlayerId))
             {
                 MelonLogger.Msg("[Car spawner] Car Already exist, Deleting it:> " + PlayerId);
-                GameObject.Destroy(GetObj(PlayerId));
-                vehicles.Remove(PlayerId);
                 UpdateDriver(PlayerId, false);
                 if (who == 0)
                 {
-                    GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
-                    vehicledata.Remove(PlayerId);
+                    GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
+                    if (targetcar != -1)
+                        VehicleController.cameracar.SetParent(null);
                 }
+                GameObject.Destroy(GetObj(PlayerId));
+                vehicles.Remove(PlayerId);
                 return true;
             }
             return false;
@@ -314,8 +318,9 @@ namespace vehiclemod
             container.m_GearToInstantiate.Clear();
             container.UpdateContainer();
             container.name = "BAGAGE";
+            container.m_CapacityKG = 100f;
+            InterfaceManager.m_Panel_Container.SetContainer(container, container.m_LocalizedDisplayName.Text());;
             container.Open();
-
         }
         public static bool allowed(GameObject go)
         {
