@@ -257,6 +257,7 @@ namespace vehiclemod
 			}
 			if (sit)
 			{
+				SkyCoop.MyMod.players[from].transform.root.parent = sit;
 				SkyCoop.MyMod.playersData[from].m_Position = sit.position;
 			}
 		}
