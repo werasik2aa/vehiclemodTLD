@@ -259,6 +259,7 @@ namespace vehiclemod
 			{
 				SkyCoop.MyMod.players[from].transform.root.parent = sit;
 				SkyCoop.MyMod.playersData[from].m_Position = sit.position;
+				SkyCoop.MyMod.players[from].transform.position = sit.position;
 			}
 		}
 		private static void CameraFollow(GameObject car)

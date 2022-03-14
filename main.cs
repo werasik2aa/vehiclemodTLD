@@ -114,6 +114,11 @@ namespace vehiclemod
                 VehicleController.accel = 1;
 
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetVpFPSPlayer()) return;
+            GameManager.m_AsyncSceneLoadsInProgress.TryGetValue(levelname, out bool f);
+            if (!isSit && f)
+            {
+                GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
+            }
             VehicleController.turn = Input.GetAxis("Horizontal");
             VehicleController.move = Input.GetAxis("Vertical");
             MyId = API.m_MyClientID;
@@ -195,15 +200,10 @@ namespace vehiclemod
         {
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetVpFPSPlayer()) return;
 
-            if (!isSit)
-            {
-                GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
-            }
-
             if (vehicles.ContainsKey(MyId) && !isDrive(MyId))
                 sendMycarPos(2);
-                if (isSit)
-            {
+
+            if (isSit) {
                 SkyCoop.MyMod.MyAnimState = "Sit";
             }
             MenuControll.Update(0); // COUNT CARS
