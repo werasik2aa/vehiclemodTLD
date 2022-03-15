@@ -103,7 +103,8 @@ namespace vehiclemod
                 VehicleController.cameracar = newcam;
 
             }
-            VehicleController.myparent = GameManager.GetPlayerTransform().transform.parent;
+           
+            VehicleController.myparent = GameManager.GetVpFPSPlayer().transform.parent;
             
         }
         public override void OnUpdate()
@@ -114,7 +115,7 @@ namespace vehiclemod
                 VehicleController.accel = 1;
             if (SkyCoop.MyMod.LoadingScreenIsOn && VehicleController.myparent)
             {
-                GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
+                GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
             }
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;
             VehicleController.turn = Input.GetAxis("Horizontal");
@@ -122,8 +123,7 @@ namespace vehiclemod
             MyId = API.m_MyClientID;
             MyNick = SkyCoop.MyMod.MyChatName;
             if(vehicles.Count > 0) ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
-            MyPosition = GameManager.GetPlayerTransform().transform;
-            if (Input.GetKeyDown(KeyCode.Escape)) if (Paused) Paused = false; else Paused = true;
+            MyPosition = GameManager.GetVpFPSPlayer().transform;
             if (Input.GetKeyDown(KeyCode.L))
             {
                 if(isSit && allowdrive)
@@ -177,14 +177,15 @@ namespace vehiclemod
                     VehicleController.fps = true;
                 else
                     VehicleController.fps = false;
-
-            if (Paused && MenuControll.openmenu)
-                MenuControll.openmenu.gameObject.SetActive(true);
-
-            else if (MenuControll.openmenu && !Paused)
+            if (MenuControll.openmenu && MenuControll.MenuMainCars)
             {
-                MenuControll.openmenu.gameObject.SetActive(false);
-                if (MenuControll.MenuMainCars) MenuControll.MenuMainCars.gameObject.SetActive(false);
+                if (Input.GetKey(KeyCode.Space))
+                    MenuControll.openmenu.gameObject.SetActive(true);
+                else
+                {
+                    MenuControll.openmenu.gameObject.SetActive(false);
+                    if (MenuControll.MenuMainCars) MenuControll.MenuMainCars.gameObject.SetActive(false);
+                }
             }
         }
         private IEnumerator sendMycarPos(float waitTime)
@@ -200,7 +201,7 @@ namespace vehiclemod
 
             if (!isSit)
             {
-                GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
+                GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
             }
 
             if (vehicles.ContainsKey(MyId) && !isDrive(MyId))
@@ -252,7 +253,7 @@ namespace vehiclemod
                 UpdateDriver(PlayerId, false);
                 if (who == 0)
                 {
-                    GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
+                    GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
                     if (targetcar != -1)
                         VehicleController.cameracar.SetParent(null);
                 }
