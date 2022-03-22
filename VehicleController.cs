@@ -185,7 +185,7 @@ namespace vehiclemod
 
 			UpdatePassanger(number, siter, main.MyId);
 			NETHost.NETSIT(number, siter);
-
+			// PARENT THE LOCAL 3D MODEL TO VEHICLE OR unparent it
 			if (main.isSit)
 			{
 				if (main.allowdrive)
@@ -246,7 +246,7 @@ namespace vehiclemod
 			MelonLogger.Msg("=================================");
 
 		}
-		public static void EngineSound(int ID, int state)
+		public static void EngineSound(int ID, int state) // SOUNDS FOR VEHICLE
 		{
 			if (!GetObj(ID)) return;
 			if (curspeed == 0) curspeed = 1;
@@ -288,6 +288,7 @@ namespace vehiclemod
 		}
 		private static void CameraFollow(int CarId)
 		{
+			// CAMERA CONTROLLER FOR VEHICLE
 			main.vehicles.TryGetValue(CarId, out GameObject car);
 			if (!fps)
 			{
@@ -318,14 +319,14 @@ namespace vehiclemod
 				if (car.transform.Find("SIT" + siter)) cameracar.transform.position = car.transform.Find("SIT" + siter).position + car.transform.up * 1.7f;
 			}
 		}
-		private static float calk(float i)
+		private static float calk(float i) //CALCULATE VOLUME DEPENDS ON RANGE -> P-C
 		{
 			i = i / 100;
 			i = 1 - i;
 			Mathf.Clamp(i, 0, 1);
 			return i;
 		}
-		public static void CarLight(int CarId, bool state)
+		public static void CarLight(int CarId, bool state) // Spot light on car
 		{
 			GameObject obj = GetObj(CarId);
 			if (!obj) return;

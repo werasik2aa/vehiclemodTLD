@@ -19,7 +19,7 @@ namespace vehiclemod
 
         //VEHICLE PART
         public static Dictionary<int, GameObject> vehicles = new Dictionary<int, GameObject>();
-        public static Dictionary<int, String> vehicledata = new Dictionary<int, String>();
+        public static Dictionary<int, String[]> vehicledata = new Dictionary<int, String[]>();
         public static Dictionary<int, bool> drivers = new Dictionary<int, bool>();
         public static Dictionary<int, int[]> passanger = new Dictionary<int, int[]>();
         public static Dictionary<int, GameObject> PlayerCar = new Dictionary<int, GameObject>();
