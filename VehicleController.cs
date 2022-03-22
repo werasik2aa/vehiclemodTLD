@@ -18,7 +18,7 @@ namespace vehiclemod
 		public static int siter;
 
 		//CAR PARAMS
-		public static float maxspeed = 40;
+		public static float maxspeed = 30;
 		public static float curspeed = 0;
 		public static float curfuel = 50;
 		public static float maxfuel = 100;
@@ -40,19 +40,38 @@ namespace vehiclemod
 		{
 			GameObject car = GetObj(number);
 			if (!car) return;
-
-			Transform sit = car.transform.Find("SIT" + siter);
+			Transform sit = GetObj(number).transform.Find("SIT" + siter);
 			NETHost.NETSIT(number, siter);
-			CameraFollow(car);//FOLLOW CAMERA
+			CameraFollow(number);//FOLLOW CAMERA
 			curX += Input.GetAxis("Mouse X") * 4f;
 			curY += Input.GetAxis("Mouse Y") * 4f;
 			rb = car.GetComponent<Rigidbody>();
-			rb.centerOfMass = Vector3.down * 0.9f;
+			rb.centerOfMass = Vector3.down * 0.6f;
 			curspeed = rb.velocity.magnitude;
 
-			accel = Mathf.Clamp(accel, 0, maxaccel);
+			if (!main.allowdrive)
+			{
+				GameManager.GetVpFPSPlayer().transform.parent = sit;
+				GameManager.GetVpFPSPlayer().transform.position = sit.position;
+			}
+
 			if (main.allowdrive)
 			{
+				float dist = Vector3.Distance(GetObj(number).transform.position, GameManager.GetVpFPSPlayer().transform.position);
+				if (GetObj(number) && !InterfaceManager.m_Panel_Loading.IsLoading() && dist > 2)
+				{
+					GetObj(number).transform.position = GameManager.GetVpFPSPlayer().transform.position + GameManager.GetVpFPSPlayer().transform.up * 5f;
+					foreach (Collider col in GameManager.GetPlayerTransform().GetComponents<Collider>())
+					{
+						col.enabled = false;
+					}
+
+					GameManager.GetVpFPSPlayer().transform.parent = sit;
+					GameManager.GetVpFPSPlayer().transform.position = Vector3.Lerp(GameManager.GetVpFPSPlayer().transform.position, GetObj(number).transform.position, 5);
+					if (!cameracar.GetComponent<Camera>())
+						cameracar.gameObject.AddComponent<Camera>().CopyFrom(GameManager.GetVpFPSCamera().m_Camera.GetComponent<Camera>());
+					cameracar.gameObject.SetActive(true);
+				}
 				// ACCELERATION
 				//MOVING
 				if (rb)
@@ -64,10 +83,10 @@ namespace vehiclemod
 						if (Physics.Raycast(i.transform.position, Vector3.down, out hit, radius + wheeldown))
 						{
 							Vector3 te = Vector3.Normalize(car.transform.TransformDirection(Vector3.forward));
-							if (move == 0) rb.AddForceAtPosition(te * curspeed * (15f + accel), hit.point);//SAVING SPEED for slide
 
 							if (curspeed > 1) car.transform.Rotate(0, (15f + curspeed / 2) * Time.deltaTime * turn * move, 0);//ROTATE TO
 							if (curspeed > maxspeed) return;
+							accel = Mathf.Clamp(accel, 0, maxaccel);
 							rb.AddForceAtPosition(te * (2f * (10f + accel * 10f)) * move, hit.point); //FORCE DRIVE\\
 						}
 						Transform wh = i.transform.Find("1");
@@ -87,21 +106,25 @@ namespace vehiclemod
 				{
 					UpdateDriver(number, true);
 					NETHost.NetSendDriver(number, true);
-					NETHost.NetSoundOn((int)Mathf.Round(curspeed), number);
+					NETHost.NetSoundOn(number);
 					NETHost.NetCar(number, CarData(number)[3], car.transform.position, car.transform.rotation);
 				}
 			}
-			EngineSound(curspeed, number, 1);
+			NETHost.NETSIT(number, siter);
+			EngineSound(number, 1);
 		}
 		public static void PlayerCarMove(int CarID, string CarName, Vector3 Position, Quaternion Rotation)
 		{
-			if (!main.vehicles.ContainsKey(CarID))
+			if (!GetObj(CarID) || !main.vehicles.ContainsKey(CarID))
 			{
 				main.SpawnCar(CarID, main.MyId, CarName, Position, Rotation);
-				return;
+			} else {
+				GetObj(CarID).transform.rotation = Rotation;
+				if (Vector3.Distance(GetObj(CarID).transform.position, Position) > 10)
+					GetObj(CarID).transform.position = Position;
+				else
+					GetObj(CarID).transform.position = Vector3.Lerp(GetObj(CarID).transform.position, Position, 15);
 			}
-			GetObj(CarID).transform.rotation = Rotation;
-			GetObj(CarID).transform.position = Vector3.Lerp(GetObj(CarID).transform.position, Position, 15);
 		}
 		public static void wheel(int number)
 		{
@@ -143,20 +166,26 @@ namespace vehiclemod
 							Vector3 velocityAtTouch = rb.GetPointVelocity(hit.point);
 							float compression = -(hit.distance / radius + wheeldown) + 1;
 							Vector3 force = Vector3.up * compression * spring;
-							Vector3 t = i.transform.InverseTransformDirection(velocityAtTouch);
-							Vector3 damping = i.transform.TransformDirection(t) * -damper;
+							Vector3 t = car.transform.InverseTransformDirection(velocityAtTouch);
+							Vector3 damping = car.transform.TransformDirection(t) * -damper;
 							Vector3 finalForce = force + damping;
-							t.z = 0;
-							//t.x = 0;
+							t = car.transform.TransformDirection(t);
+
 							rb.AddForceAtPosition(finalForce + (t), hit.point);
 						}
 					}
 				}
 		}
-		public static void SitCar(int number, int chair)
+		public static void SitCar(int number)
 		{
 			GameObject car = GetObj(number);
-			siter = chair;
+			siter = CountPassangers(number) + 1;
+
+			if (main.isSit) siter = 0;
+
+			UpdatePassanger(number, siter, main.MyId);
+			NETHost.NETSIT(number, siter);
+
 			if (main.isSit)
 			{
 				if (main.allowdrive)
@@ -165,7 +194,7 @@ namespace vehiclemod
 					NETHost.NetSendDriver(number, false);
 				}
 
-				GameManager.GetPlayerManagerComponent().TeleportPlayer(main.MyPosition.position - car.transform.right * 3f + car.transform.up, Quaternion.identity);
+				GameManager.GetPlayerManagerComponent().TeleportPlayer(main.MyPosition.position - car.transform.right * 2.5f + car.transform.up, Quaternion.identity);
 				GameManager.GetPlayerManagerComponent().StickPlayerToGround();
 				foreach (Collider col in GameManager.GetPlayerTransform().GetComponents<Collider>())
 				{
@@ -176,13 +205,19 @@ namespace vehiclemod
 				cameracar.SetParent(null);
 				main.targetcar = -1;
 				MenuControll.Open(1);
-				EngineSound(0, number, 0);
-				NETHost.NetSoundOff(number);
+				if (CountPassangers(number) <= 1)
+				{
+					EngineSound(number, 0);
+					NETHost.NetSoundOff(number);
+				}
 				main.isSit = false;
+				GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
+				NETHost.NETSIT(number, 0);
 			}
 			else
 			{
-				Transform sit = car.transform.Find("SIT" + chair);
+				Transform sit = car.transform.Find("SIT" + siter);
+				if (!sit) return;
 				if (main.allowdrive)
 				{
 					data.UpdateDriver(number, true);
@@ -201,13 +236,17 @@ namespace vehiclemod
 				cameracenter = car.transform.Find("CAMERACENTER");
 				cameracar.transform.position = cameracenter.position;
 				main.isSit = true;
-				
-				 GameManager.GetVpFPSPlayer().transform.position = sit.position;
-				 GameManager.GetVpFPSPlayer().transform.SetParent(sit);
+				GameManager.GetVpFPSPlayer().transform.SetParent(sit);
+				GameManager.GetVpFPSPlayer().transform.position = sit.position;
 			}
-			MelonLogger.Msg("[Sit Manager]: " + main.allowdrive + "|" + isDrive(number));
+
+			MelonLogger.Msg("=================================");
+			MelonLogger.Msg("[Sit Manager]: ID | LOCALL | SERVER | COUNTPASSANGER");
+			MelonLogger.Msg("[Sit Manager]: " + number + " | " + main.allowdrive + " | " + isDrive(number) + " | " + CountPassangers(number)+ " | " + siter);
+			MelonLogger.Msg("=================================");
+
 		}
-		public static void EngineSound(float curspeed, int ID, int state)
+		public static void EngineSound(int ID, int state)
 		{
 			if (!GetObj(ID)) return;
 			if (curspeed == 0) curspeed = 1;
@@ -219,6 +258,7 @@ namespace vehiclemod
 				audio.Stop();
 				return;
 			}
+
 			if (!audio.isPlaying) audio.Play();
 			if (audio)
 			{
@@ -246,27 +286,18 @@ namespace vehiclemod
 				}
 			}
 		}
-		public static void CHANGESIT(int number, int i, int from)
+		private static void CameraFollow(int CarId)
 		{
-			GameObject car = GetObj(number);
-			Transform sit = null;
-			audio = car.GetComponent<AudioSource>();
-			sit = car.transform.Find("SIT" + i);
-			if (i == 0)
-			{
-				SkyCoop.MyMod.players[from].transform.root.parent = null;
-			}
-			if (sit)
-			{
-				SkyCoop.MyMod.players[from].transform.parent = sit;
-				SkyCoop.MyMod.playersData[from].m_Position = sit.position;
-			}
-		}
-		private static void CameraFollow(GameObject car)
-		{
+			main.vehicles.TryGetValue(CarId, out GameObject car);
 			if (!fps)
 			{
-				cameracar.transform.SetParent(car.transform);
+				GameObject player = GetObj(CarId).transform.Find("SIT" + siter + "/" + main.MyId).gameObject;
+				if (player && !player.active) player.SetActive(true);
+
+				if (main.allowdrive)
+					cameracar.transform.SetParent(null);
+				else
+					cameracar.transform.SetParent(car.transform);
 				Vector3 range = -Vector3.forward * 6f;
 				float smothspeed = 5f;
 				cameracenter.transform.localRotation = Quaternion.Euler(-curY, -curX, 0);//ROTATE CENTER
@@ -274,9 +305,12 @@ namespace vehiclemod
 				Vector3 targetPosition = cameracenter.position + cameracenter.forward * range.z + cameracenter.right * range.x + cameracenter.up * range.y;
 				cameracar.transform.position = Vector3.Lerp(cameracar.transform.position, targetPosition, smothspeed * Time.deltaTime);
 				cameracar.transform.LookAt(cameracenter);
+				GameManager.GetVpFPSCamera().transform.LookAt(cameracar);
 			}
 			else
 			{
+				GameObject player = GetObj(CarId).transform.Find("SIT" + siter + "/" + main.MyId).gameObject;
+				if (player && player.active) player.SetActive(false);
 				cameracar.transform.SetParent(car.transform);
 				curY = Mathf.Clamp(curY, -60, 90);
 				curX = Mathf.Clamp(curX, -180, 180);

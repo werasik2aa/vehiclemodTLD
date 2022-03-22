@@ -15,13 +15,14 @@ namespace vehiclemod
         public static List<AssetBundle> lb = new List<AssetBundle>();
         private Ray ray;
         private RaycastHit hit;
-        private static bool Paused;
         public static bool light;
 
         //VEHICLE PART
         public static Dictionary<int, GameObject> vehicles = new Dictionary<int, GameObject>();
         public static Dictionary<int, String> vehicledata = new Dictionary<int, String>();
         public static Dictionary<int, bool> drivers = new Dictionary<int, bool>();
+        public static Dictionary<int, int[]> passanger = new Dictionary<int, int[]>();
+        public static Dictionary<int, GameObject> PlayerCar = new Dictionary<int, GameObject>();
 
         public static Transform MyPosition = null;
         public static int targetcar = 0;
@@ -35,6 +36,7 @@ namespace vehiclemod
         //CHECK PART FOR VEHICLE CONTROLLER
         public static bool isSit = false;
         public static bool allowdrive = false;
+        public static bool changedDrivePlace = false;
         private static bool allowsit = true;
 
         public override void OnApplicationStart()
@@ -80,20 +82,14 @@ namespace vehiclemod
 
             MelonLogger.Msg("[PREINIT] Vehicle mod loaded and vehicle files too");
         }
+        public override void OnSceneWasInitialized(int buildIndex, string sceneName)
+        {
+            
+        }
         public override void OnSceneWasLoaded(int level, string name)
         {
             levelid = level;
             levelname = name;
-            Paused = false;
-
-            MelonLogger.Msg("[Garbage Collector] Clearing Vehicle list on level:> " + levelname);
-            vehicles.Clear();
-            vehicledata.Clear();
-            drivers.Clear();
-
-            allowdrive = false;
-            isSit = false; // SET FALSE BECAUSE LEVEL CHANGED AND CAR ERASED
-            targetcar = -1;
             if (levelname != "Empty" && levelname != "MainMenu" && levelname != "Boot")
             {
                 MelonLogger.Msg("[InitCanvas] Spawning Menu on Level:> " + levelname);
@@ -101,11 +97,8 @@ namespace vehiclemod
                 Transform newcam = GameObject.Instantiate(new GameObject("00100"), Vector3.zero, Quaternion.identity).transform;
                 newcam.gameObject.SetActive(false);
                 VehicleController.cameracar = newcam;
-
             }
-           
-            VehicleController.myparent = GameManager.GetVpFPSPlayer().transform.parent;
-            
+            if (GameManager.GetVpFPSPlayer()) VehicleController.myparent = GameManager.GetVpFPSPlayer().transform.parent; 
         }
         public override void OnUpdate()
         {
@@ -128,7 +121,7 @@ namespace vehiclemod
             {
                 if(isSit && allowdrive)
                 {
-                    bool cur;
+                    bool cur = true;
                     if (light)
                         cur = false;
                     else
@@ -138,15 +131,16 @@ namespace vehiclemod
                     NETHost.NetLightOn(targetcar, cur);
                 }
             }
+            Hide();
             // fuck
             if (Input.GetKeyDown(KeyCode.E))
             {
                 int number = -1;
-                int chair = 0;
                 if (!isSit && Physics.Raycast(ray, out hit, 5f))
                 {
                     if(!VehicleController.cameracar.GetComponent<Camera>())
                         VehicleController.cameracar.gameObject.AddComponent<Camera>().CopyFrom(GameManager.GetVpFPSCamera().m_Camera.GetComponent<Camera>());
+
                     GameObject car = hit.collider.gameObject;
                     if (car.name == "BAGAGE")
                     {
@@ -162,14 +156,7 @@ namespace vehiclemod
                     targetcar = number;
                 }
 
-                if (allowdrive) 
-                    chair = 1;
-                else
-                    chair = 2;
-
-                if (isSit) chair = 0;
-
-                if(targetcar > -1) VehicleController.SitCar(targetcar, chair);
+                if (targetcar > -1) VehicleController.SitCar(targetcar);
             }
             if (Input.GetKeyDown(KeyCode.Mouse2))
 
@@ -188,28 +175,12 @@ namespace vehiclemod
                 }
             }
         }
-        private IEnumerator sendMycarPos(float waitTime)
-        {
-            NETHost.NetPacketStat(isDrive(MyId), allowsit, VehicleController.curfuel, CarData(MyId)[0]);
-            yield return new WaitForSeconds(waitTime);
-            if (GetObj(MyId))
-                NETHost.NetCar(MyId, CarData(MyId)[0], GetObj(MyId).transform.position, GetObj(MyId).transform.rotation);
-        }
         public override void OnLateUpdate()
         {
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;
-
-            if (!isSit)
-            {
-                GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
-            }
-
-            if (vehicles.ContainsKey(MyId) && !isDrive(MyId))
-                sendMycarPos(2);
-            if (isSit)
-            {
-                SkyCoop.MyMod.MyAnimState = "Sit";
-            }
+            if (vehicles.Count > 0) foreach (var i in vehicles) if (!i.Value) vehicles.Remove(i.Key);
+            if (GetObj(MyId) && !isDrive(MyId))
+                NETHost.NetCar(MyId, CarData(MyId)[3], GetObj(MyId).transform.position, GetObj(MyId).transform.rotation);
             MenuControll.Update(0); // COUNT CARS
             MenuControll.Update(1); // COOUNT SPEED
             MenuControll.Update(2); // COUNT FUEL
@@ -223,7 +194,7 @@ namespace vehiclemod
                     string othname = "Unknown";
                     try { number = int.Parse(ho.name); } catch { return; }
                     if (!vehicledata.ContainsKey(number)) return;
-                    if (!GetObj(number).transform.parent.Find("CAMERACENTER")) return;
+                    if (!GetObj(number).transform.root.Find("CAMERACENTER")) return;
 
                     othname = SkyCoop.MyMod.playersData[number].m_Name;
                     if (number == MyId) othname = MyNick;
@@ -238,6 +209,10 @@ namespace vehiclemod
             }
             else
                 MenuControll.Open(22);
+            if (isSit)
+            {
+                SkyCoop.MyMod.MyAnimState = "Sit";
+            }
         }
         public override void OnFixedUpdate()
         {
@@ -247,7 +222,7 @@ namespace vehiclemod
         }
         public static bool deletecar(int PlayerId, int who)
         {
-            if (GetObj(PlayerId) && !isDrive(PlayerId))
+            if (GetObj(PlayerId) && !isDrive(PlayerId) && CountPassangers(PlayerId) == 0)
             {
                 MelonLogger.Msg("[Car spawner] Car Already exist, Deleting it:> " + PlayerId);
                 UpdateDriver(PlayerId, false);
@@ -304,24 +279,10 @@ namespace vehiclemod
         }
         private void loot(GameObject bagage)
         {
-            Container container = bagage.GetComponent<Container>();
 
-            if (!container)
-            {
-                var guidCmp = bagage.GetComponent<ObjectGuid>();
-                bagage.AddComponent<ObjectGuid>();
-                guidCmp = bagage.GetComponent<ObjectGuid>();
-                guidCmp.Set(SkyCoop.MyMod.level_guid);
-                bagage.AddComponent<Container>();
-                container.GetComponent<Container>().m_Inspected = true;
-            }
-            container.m_NotPopulated = false;
-            container.m_GearToInstantiate.Clear();
-            container.UpdateContainer();
-            container.name = "BAGAGE";
-            container.m_CapacityKG = 100f;
-            InterfaceManager.m_Panel_Container.SetContainer(container, container.m_LocalizedDisplayName.Text());;
-            container.Open();
+            GameObject conta = GameObject.Instantiate(Resources.Load<GameObject>("CONTAINER_MetalBox"), Vector3.one, Quaternion.identity);
+            conta.transform.root.position = bagage.transform.position;
+            conta.transform.SetParent(bagage.transform);
         }
         public static bool allowed(GameObject go)
         {

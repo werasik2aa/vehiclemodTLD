@@ -85,13 +85,12 @@ namespace vehiclemod
 
             Send(packet);
         }
-        public static void NetSoundOn(int curspeed, int ID)
+        public static void NetSoundOn(int ID)
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(1100);
-            packet.Write(curspeed);
             packet.Write(ID);
 
             Send(packet);

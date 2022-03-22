@@ -21,7 +21,7 @@ namespace vehiclemod
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from) && data.GetObj(ID)) VehicleController.PlayerCarMove(ID, name, Position, Rotation);
+                if (CheckEnv(from)) VehicleController.PlayerCarMove(ID, name, Position, Rotation);
             }
 
             if (packetid == 1000) // SPAWN CAR
@@ -64,14 +64,13 @@ namespace vehiclemod
             }
             if (packetid == 1100) // SEND Sound ON
             {
-                int curspeed = _pak.ReadInt();
                 int ID = _pak.ReadInt();
                 if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT)
                 {
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.EngineSound(curspeed, ID, 1);
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.EngineSound(ID, 1);
             }
             if (packetid == 1110) // SEND Sound OFF
             {
@@ -82,7 +81,7 @@ namespace vehiclemod
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.EngineSound(0, ID, 0);
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.EngineSound(ID, 0);
             }
             if (packetid == 1111) // SIT SIT POS
             {
@@ -93,7 +92,7 @@ namespace vehiclemod
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.CHANGESIT(ID, SitID, from);
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) data.UpdatePassanger(ID, SitID, from);
             }
             if (packetid == 1101) // Turn LIGHT
             {
