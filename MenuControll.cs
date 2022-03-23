@@ -128,8 +128,8 @@ namespace vehiclemod
             if (i == 1 && MenuMainStatCar)
                 if (MenuMainStatCar.gameObject.active)
                     MenuMainStatCar.gameObject.SetActive(false);
-                else
-                    MenuMainStatCar.gameObject.SetActive(true);
+            if (i == 11 && MenuMainStatCar)
+                MenuMainStatCar.gameObject.SetActive(true);
 
             if (i == 2 && CarStat)
                     CarStat.gameObject.SetActive(true);

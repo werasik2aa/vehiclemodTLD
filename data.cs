@@ -97,6 +97,7 @@ namespace vehiclemod
                     if (!sit || !newob) return;
                     newob.transform.SetParent(sit);
                     newob.transform.position = sit.position;
+                    newob.transform.LookAt(sit.transform.forward*2f);
                     newob.SetActive(true);
                     newob.name = from.ToString();
                 }
