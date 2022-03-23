@@ -38,7 +38,7 @@ namespace vehiclemod
         public static bool allowdrive = false;
         public static bool changedDrivePlace = false;
         private static bool allowsit = true;
-
+        private static bool isChat = false;
         public override void OnApplicationStart()
         {
             DirectoryInfo dir = new DirectoryInfo("Mods/vehiclemod");
@@ -110,14 +110,23 @@ namespace vehiclemod
             {
                 GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
             }
-            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;
+            if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;//check
             VehicleController.turn = Input.GetAxis("Horizontal");
             VehicleController.move = Input.GetAxis("Vertical");
             MyId = API.m_MyClientID;
             MyNick = SkyCoop.MyMod.MyChatName;
-            if(vehicles.Count > 0) ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
+            ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
             MyPosition = GameManager.GetVpFPSPlayer().transform;
-            if (Input.GetKeyDown(KeyCode.L))
+            isChat = SkyCoop.MyMod.chatInput.IsActive();
+            /*if (Input.GetKeyDown(KeyCode.Mouse2))
+            {
+                if(Physics.Raycast(ray, out hit, 5f))
+                {
+                    hit.transform.parent.gameObject.AddComponent<Rigidbody>();
+                    MelonLogger.Msg(hit.transform.name+"|"+hit.transform.gameObject.tag+"|"+ LayerMask.LayerToName(hit.transform.gameObject.layer));
+                }
+            }*/
+                if (Input.GetKeyDown(KeyCode.L) && !isChat)
             {
                 if(isSit && allowdrive)
                 {
@@ -133,10 +142,10 @@ namespace vehiclemod
             }
             Hide();
             // fuck
-            if (Input.GetKeyDown(KeyCode.E))
+            if (Input.GetKeyDown(KeyCode.E) && !isChat)
             {
                 int number = -1;
-                if (!isSit && Physics.Raycast(ray, out hit, 5f))
+                if (!isSit && Physics.Raycast(ray, out hit, 3f))
                 {
                     if(!VehicleController.cameracar.GetComponent<Camera>())
                         VehicleController.cameracar.gameObject.AddComponent<Camera>().CopyFrom(GameManager.GetVpFPSCamera().m_Camera.GetComponent<Camera>());
@@ -158,12 +167,13 @@ namespace vehiclemod
 
                 if (targetcar > -1) VehicleController.SitCar(targetcar);
             }
-            if (Input.GetKeyDown(KeyCode.Mouse2))
 
+            if (Input.GetKeyDown(KeyCode.Mouse2))
                 if (VehicleController.cameracar && VehicleController.fps == false)
                     VehicleController.fps = true;
                 else
                     VehicleController.fps = false;
+
             if (MenuControll.openmenu && MenuControll.MenuMainCars)
             {
                 if (Input.GetKey(KeyCode.Space))
@@ -184,7 +194,10 @@ namespace vehiclemod
             MenuControll.Update(0); // COUNT CARS
             MenuControll.Update(1); // COOUNT SPEED
             MenuControll.Update(2); // COUNT FUEL
-
+            if (!isSit)
+            {
+                MenuControll.Open(1);
+            }
             if (vehicles.Count > 0 && Physics.Raycast(ray, out hit, 3f) && !isSit)
             {
                 GameObject ho = hit.transform.gameObject;

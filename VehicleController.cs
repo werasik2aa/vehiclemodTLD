@@ -46,7 +46,7 @@ namespace vehiclemod
 			curX += Input.GetAxis("Mouse X") * 4f;
 			curY += Input.GetAxis("Mouse Y") * 4f;
 			rb = car.GetComponent<Rigidbody>();
-			rb.centerOfMass = Vector3.down * 0.6f;
+			rb.centerOfMass = Vector3.down * 0.7f;
 			curspeed = rb.velocity.magnitude;
 
 			if (!main.allowdrive)
@@ -55,7 +55,7 @@ namespace vehiclemod
 				GameManager.GetVpFPSPlayer().transform.position = sit.position;
 			}
 
-			if (main.allowdrive)
+			if (main.allowdrive && !SkyCoop.MyMod.chatInput.IsActive())
 			{
 				float dist = Vector3.Distance(GetObj(number).transform.position, GameManager.GetVpFPSPlayer().transform.position);
 				if (GetObj(number) && !InterfaceManager.m_Panel_Loading.IsLoading() && dist > 2)
@@ -87,8 +87,10 @@ namespace vehiclemod
 							if (curspeed > 1) car.transform.Rotate(0, (15f + curspeed / 2) * Time.deltaTime * turn * move, 0);//ROTATE TO
 							if (curspeed > maxspeed) return;
 							accel = Mathf.Clamp(accel, 0, maxaccel);
+
 							rb.AddForceAtPosition(te * (2f * (10f + accel * 10f)) * move, hit.point); //FORCE DRIVE\\
 						}
+						
 						Transform wh = i.transform.Find("1");
 						Transform wh2 = i.transform.Find("2");
 						// 1 - Circle wheel \\
@@ -165,11 +167,11 @@ namespace vehiclemod
 						{
 							Vector3 velocityAtTouch = rb.GetPointVelocity(hit.point);
 							float compression = -(hit.distance / radius + wheeldown) + 1;
-							Vector3 force = Vector3.up * compression * spring;
+							Vector3 force = Vector3.up/0.5f * compression * spring;
 							Vector3 t = car.transform.InverseTransformDirection(velocityAtTouch);
 							Vector3 damping = car.transform.TransformDirection(t) * -damper;
 							Vector3 finalForce = force + damping;
-							t = car.transform.TransformDirection(t);
+							t = car.transform.InverseTransformDirection(velocityAtTouch);
 
 							rb.AddForceAtPosition(finalForce + (t), hit.point);
 						}
@@ -180,7 +182,7 @@ namespace vehiclemod
 		{
 			GameObject car = GetObj(number);
 			siter = CountPassangers(number) + 1;
-
+			if (main.allowdrive) siter = 1;
 			if (main.isSit) siter = 0;
 
 			UpdatePassanger(number, siter, main.MyId);
@@ -232,10 +234,10 @@ namespace vehiclemod
 				wheels[2] = car.transform.Find("BL");
 				wheels[3] = car.transform.Find("BR");
 				cameracar.gameObject.SetActive(true);
-				MenuControll.Open(1);
 				cameracenter = car.transform.Find("CAMERACENTER");
 				cameracar.transform.position = cameracenter.position;
 				main.isSit = true;
+				MenuControll.Open(11);
 				GameManager.GetVpFPSPlayer().transform.SetParent(sit);
 				GameManager.GetVpFPSPlayer().transform.position = sit.position;
 			}
