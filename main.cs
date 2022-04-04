@@ -38,7 +38,7 @@ namespace vehiclemod
         public static bool allowdrive = false;
         public static bool changedDrivePlace = false;
         private static bool allowsit = true;
-        private static bool isChat = false;
+        public static bool isChat = false;
         public override void OnApplicationStart()
         {
             DirectoryInfo dir = new DirectoryInfo("Mods/vehiclemod");
@@ -118,16 +118,8 @@ namespace vehiclemod
             ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
             MyPosition = GameManager.GetVpFPSPlayer().transform;
             isChat = SkyCoop.MyMod.chatInput.IsActive();
-            /*if (Input.GetKeyDown(KeyCode.Mouse2))
-            {
-                if(Physics.Raycast(ray, out hit, 5f))
-                {
-                    hit.transform.parent.gameObject.AddComponent<Rigidbody>();
-                    MelonLogger.Msg(hit.transform.name+"|"+hit.transform.gameObject.tag+"|"+ LayerMask.LayerToName(hit.transform.gameObject.layer));
-                }
-            }*/
-                if (Input.GetKeyDown(KeyCode.L) && !isChat)
-            {
+
+                if (Input.GetKeyDown(KeyCode.L) && !isChat) {
                 if(isSit && allowdrive)
                 {
                     bool cur = true;
@@ -142,7 +134,7 @@ namespace vehiclemod
             }
             Hide();
             // fuck
-            if (Input.GetKeyDown(KeyCode.E) && !isChat)
+            if (Input.GetKeyDown(KeyCode.E) && !isChat && !InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled)
             {
                 int number = -1;
                 if (!isSit && Physics.Raycast(ray, out hit, 3f))
@@ -174,15 +166,14 @@ namespace vehiclemod
                 else
                     VehicleController.fps = false;
 
-            if (MenuControll.openmenu && MenuControll.MenuMainCars)
+            if (InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled)
             {
-                if (Input.GetKey(KeyCode.Space))
-                    MenuControll.openmenu.gameObject.SetActive(true);
-                else
-                {
-                    MenuControll.openmenu.gameObject.SetActive(false);
-                    if (MenuControll.MenuMainCars) MenuControll.MenuMainCars.gameObject.SetActive(false);
-                }
+                MenuControll.openmenu.gameObject.SetActive(true);
+            }
+            else
+            {
+                MenuControll.openmenu.gameObject.SetActive(false);
+                if (MenuControll.MenuMainCars) MenuControll.MenuMainCars.gameObject.SetActive(false);
             }
         }
         public override void OnLateUpdate()
@@ -201,13 +192,12 @@ namespace vehiclemod
             if (vehicles.Count > 0 && Physics.Raycast(ray, out hit, 3f) && !isSit)
             {
                 GameObject ho = hit.transform.gameObject;
-                if (!(ho.name.Length > 2))
+                if (!isChat && !InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled)
                 {
                     int number;
                     string othname = "Unknown";
                     try { number = int.Parse(ho.name); } catch { return; }
                     if (!vehicledata.ContainsKey(number)) return;
-                    if (!GetObj(number).transform.root.Find("CAMERACENTER")) return;
 
                     othname = SkyCoop.MyMod.playersData[number].m_Name;
                     if (number == MyId) othname = MyNick;

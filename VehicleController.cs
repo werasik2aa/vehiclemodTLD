@@ -55,7 +55,7 @@ namespace vehiclemod
 				GameManager.GetVpFPSPlayer().transform.position = sit.position;
 			}
 
-			if (main.allowdrive && !SkyCoop.MyMod.chatInput.IsActive())
+			if (main.allowdrive && !main.isChat)
 			{
 				float dist = Vector3.Distance(GetObj(number).transform.position, GameManager.GetVpFPSPlayer().transform.position);
 				if (GetObj(number) && !InterfaceManager.m_Panel_Loading.IsLoading() && dist > 2)
@@ -167,13 +167,14 @@ namespace vehiclemod
 						{
 							Vector3 velocityAtTouch = rb.GetPointVelocity(hit.point);
 							float compression = -(hit.distance / radius + wheeldown) + 1;
-							Vector3 force = Vector3.up/0.5f * compression * spring;
+							Vector3 force = Vector3.up / 0.5f * compression * spring;
 							Vector3 t = car.transform.InverseTransformDirection(velocityAtTouch);
-							Vector3 damping = car.transform.TransformDirection(t) * -damper;
-							Vector3 finalForce = force + damping;
-							t = car.transform.InverseTransformDirection(velocityAtTouch);
+							Vector3 damping = car.transform.TransformDirection(t) * damper;
+							Vector3 finalForce = force - damping;
+							if (rb.velocity.magnitude > 0.3f) GameManager.GetFootstepTrailManager().AddPlayerFootstep(wh.position, hit.point, hit.normal, wh.rotation.y, false, 10f);
 
-							rb.AddForceAtPosition(finalForce + (t), hit.point);
+
+							rb.AddForceAtPosition(finalForce, hit.point, ForceMode.Force);
 						}
 					}
 				}
