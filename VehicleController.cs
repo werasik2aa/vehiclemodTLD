@@ -20,10 +20,10 @@ namespace vehiclemod
 		//CAR PARAMS
 		public static float maxspeed = 30;
 		public static float curspeed = 0;
+		public static float prevspeed = 0;
 		public static float curfuel = 50;
 		public static float maxfuel = 100;
 		public static float accel = 0;
-		private static float maxaccel = 30;
 
 		//INPUT MOVE
 		private static float curX = 0f;
@@ -32,10 +32,11 @@ namespace vehiclemod
 		public static float turn = 0f;
 
 		//WHEEL HIT PARAMS
-		private static float wheeldown = 0.4f;
-		private static float radius = 0.9f;
-		private static float spring = 300f;
-		private static float damper = 20f;
+		private static float dampRadius = 0.4f;
+		private static float damperForce = 20f;
+		private static float springRadius = 0.9f;
+		private static float springForce = 300f;
+		private static float wheelRadius = 0.2f;
 		public static void MoveDrive(int number)
 		{
 			GameObject car = GetObj(number);
@@ -80,27 +81,19 @@ namespace vehiclemod
 					{
 
 						if (!i) return;
-						if (Physics.Raycast(i.transform.position, Vector3.down, out hit, radius + wheeldown))
+						if (Physics.Raycast(i.transform.position, Vector3.down, out hit, springRadius + dampRadius))
 						{
-							Vector3 te = Vector3.Normalize(car.transform.TransformDirection(Vector3.forward));
-
 							if (curspeed > 1) car.transform.Rotate(0, (15f + curspeed / 2) * Time.deltaTime * turn * move, 0);//ROTATE TO
-							if (curspeed > maxspeed) return;
-							accel = Mathf.Clamp(accel, 0, maxaccel);
 
-							rb.AddForceAtPosition(te * (2f * (10f + accel * 10f)) * move, hit.point); //FORCE DRIVE\\
+							rb.AddForceAtPosition(car.transform.forward * accel * 2f, hit.point, ForceMode.Impulse); //FORCE DRIVE\\
 						}
 						
 						Transform wh = i.transform.Find("1");
-						Transform wh2 = i.transform.Find("2");
 						// 1 - Circle wheel \\
 						// 2 - Flat wheel   \\
-						if ((wheels[0] == i || wheels[1] == i) && (wh || wh2))
+						if (wheels[0] == i || wheels[1] == i)
 						{
 							if (wh && main.allowdrive) wh.localRotation = Quaternion.Euler(0, turn * 30, 0);// VISUAL WHEEL 1 FL
-							if (wh && main.allowdrive) wh.localRotation = Quaternion.Euler(0, turn * 30, 0);// VISUAL WHEEL 1 FR
-							if (wh2 && main.allowdrive) wh2.localRotation = Quaternion.Euler(0, 0, turn * 30);// VISUAL WHEEL 2 FL
-							if (wh2 && main.allowdrive) wh2.localRotation = Quaternion.Euler(0, 0, turn * 30);// VISUAL WHEEL 2 FR
 						}
 					}
 				}
@@ -141,13 +134,14 @@ namespace vehiclemod
 
 			Rigidbody rb = car.GetComponent<Rigidbody>();
 
+			springForce = float.Parse(GetInfo(CarData(number)[3], "springForce"));
+
 			if (rb)
 				foreach (var i in wheels)
 				{
 					if (!i) return;
 					Transform wh = i.transform.Find("1");
-					Transform wh2 = i.transform.Find("2");
-					if (wh || wh2)
+					if (wh)
 					{
 						// 1 - Circle wheel \\
 						// 2 - Flat wheel   \\
@@ -155,26 +149,22 @@ namespace vehiclemod
 						{
 							wh.transform.position = hit.point + Vector3.up * 0.5f;
 						}
-						if (wh2 && Physics.Raycast(i.transform.position, Vector3.down, out hit, 0.1f))
-						{
-							wh2.transform.position = hit.point + Vector3.up * 0.05f;
-						}
-						//SETTING THE ACCEL AND OTHER FOR
-						if (wh) { maxaccel = 20f; wheeldown = 0.4f; radius = 0.9f; spring = 300f; damper = 20f; } // Setting for WHEEL CIRCLE
-						if (wh2) { maxaccel = 1f; wheeldown = 0.1f; radius = 0.5f; spring = 300f; damper = 20f; } // Setting for WHEEL flat
 
-						if ((wh || wh2) && Physics.Raycast(i.transform.position, Vector3.down, out hit, radius + wheeldown))
+						if (Physics.SphereCast(i.transform.position, wheelRadius, Vector3.down, out hit, springRadius + dampRadius))
 						{
 							Vector3 velocityAtTouch = rb.GetPointVelocity(hit.point);
-							float compression = -(hit.distance / radius + wheeldown) + 1;
-							Vector3 force = Vector3.up / 0.5f * compression * spring;
-							Vector3 t = car.transform.InverseTransformDirection(velocityAtTouch);
-							Vector3 damping = car.transform.TransformDirection(t) * damper;
-							Vector3 finalForce = force - damping;
+							float compression = -(hit.distance / springRadius + dampRadius) + 1;
+							Vector3 force = -i.transform.TransformDirection(Vector3.down) * compression * springForce;
+							Vector3 t = i.transform.InverseTransformDirection(velocityAtTouch);
+							Vector3 damping = i.transform.TransformDirection(t) * -damperForce;
+							Vector3 finalForce = force + damping;
+							t = rb.transform.InverseTransformDirection(velocityAtTouch);
+							t = i.TransformDirection(t);
+
 							if (rb.velocity.magnitude > 0.3f) GameManager.GetFootstepTrailManager().AddPlayerFootstep(wh.position, hit.point, hit.normal, wh.rotation.y, false, 10f);
 
 
-							rb.AddForceAtPosition(finalForce, hit.point, ForceMode.Force);
+							rb.AddForceAtPosition(finalForce + t, hit.point, ForceMode.Force);
 						}
 					}
 				}
@@ -267,7 +257,7 @@ namespace vehiclemod
 			{
 				var dist = Vector3.Distance(GetObj(ID).transform.position, main.MyPosition.position);
 
-				audio.volume = calk(dist);
+				audio.volume = calkrange(dist);
 
 				audio.pitch = (0.30f + curspeed * 0.025f);
 				if (curspeed > 30)
@@ -321,13 +311,6 @@ namespace vehiclemod
 				cameracar.transform.localRotation = Quaternion.Euler(-curY, curX, 0);
 				if (car.transform.Find("SIT" + siter)) cameracar.transform.position = car.transform.Find("SIT" + siter).position + car.transform.up * 1.7f;
 			}
-		}
-		private static float calk(float i) //CALCULATE VOLUME DEPENDS ON RANGE -> P-C
-		{
-			i = i / 100;
-			i = 1 - i;
-			Mathf.Clamp(i, 0, 1);
-			return i;
 		}
 		public static void CarLight(int CarId, bool state) // Spot light on car
 		{

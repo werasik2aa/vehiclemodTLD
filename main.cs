@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Collections;
 using static vehiclemod.data;
+using UnityEngine.Rendering.PostProcessing;
 
 namespace vehiclemod
 {
@@ -48,11 +49,10 @@ namespace vehiclemod
             load = null;
             foreach (DirectoryInfo i in vehicles)
             {
-                string Name = "NaN";
-                string Description = "NaN";
-                string Icon = "NaN";
-                string FileName = "NaN";
+                int number = 0;
                 string PATH = i.FullName+"\\";
+                KeyValuePair<string, string>[] dataco = new KeyValuePair<string, string>[1];
+
                 using (StreamReader sr = new StreamReader(PATH + "info.ini"))
                 {
                     while (!sr.EndOfStream)
@@ -61,30 +61,25 @@ namespace vehiclemod
                         if (line != "" && !line.StartsWith("[") && !line.EndsWith("]") && !line.StartsWith("(") && !line.EndsWith(")"))
                         {
                             string[] data = line.Split('=');
-                            if (data[0] == "Prefab-Name") Name = data[1];
-                            if (data[0] == "Descriotion") Description = data[1];
-                            if (data[0] == "FileName") FileName = data[1];
-                            if (data[0] == "Icon") Icon = data[1];
+                            dataco[number] = new KeyValuePair<string, string>(data[0], data[1]);
+                            number++;
+                            Array.Resize(ref dataco, number+1);
                         }
                     }
                 }
-                MenuControll.info.Add((PATH + "=" + FileName + "=" + Icon + "=" + Name + "=" + Description).Split('='));
+                MenuControll.addonData.Add(i.Name, dataco);
 
-                load = AssetBundle.LoadFromFile(PATH + FileName);
+                load = AssetBundle.LoadFromFile(PATH + GetInfo(i.Name, "FileName"));
                 if (load)
                 {
                     lb.Add(load);
-                    MelonLogger.Msg("[PREINIT] [" + FileName + "] Successfull Loaded");
+                    MelonLogger.Msg("[PREINIT] [" + GetInfo(i.Name, "FileName") + "] Successfull Loaded");
                 }
                 else
-                    MelonLogger.Msg("[PREINIT] [" + FileName + "] File corrupted or not supported. Or maybe not found");
+                    MelonLogger.Msg("[PREINIT] [" + GetInfo(i.Name, "FileName") + "] File corrupted or not supported. Or maybe not found");
             }
 
             MelonLogger.Msg("[PREINIT] Vehicle mod loaded and vehicle files too");
-        }
-        public override void OnSceneWasInitialized(int buildIndex, string sceneName)
-        {
-            
         }
         public override void OnSceneWasLoaded(int level, string name)
         {
@@ -102,10 +97,6 @@ namespace vehiclemod
         }
         public override void OnUpdate()
         {
-            if (VehicleController.move != 0 && main.allowdrive) //ACELERATION
-                VehicleController.accel += 5 * Time.deltaTime;
-            else
-                VehicleController.accel = 1;
             if (SkyCoop.MyMod.LoadingScreenIsOn && VehicleController.myparent)
             {
                 GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
@@ -139,8 +130,14 @@ namespace vehiclemod
                 int number = -1;
                 if (!isSit && Physics.Raycast(ray, out hit, 3f))
                 {
-                    if(!VehicleController.cameracar.GetComponent<Camera>())
+                    if (!VehicleController.cameracar.GetComponent<Camera>())
+                    {
                         VehicleController.cameracar.gameObject.AddComponent<Camera>().CopyFrom(GameManager.GetVpFPSCamera().m_Camera.GetComponent<Camera>());
+                        CopyComponent(GameManager.GetVpFPSCamera().m_Camera.GetComponent<CameraEffects>(), VehicleController.cameracar.gameObject);
+                        CopyComponent(GameManager.GetVpFPSCamera().m_Camera.GetComponent<FlareLayer>(), VehicleController.cameracar.gameObject);
+                        CopyComponent(GameManager.GetVpFPSCamera().m_Camera.GetComponent<PostProcessLayer>(), VehicleController.cameracar.gameObject);
+                        VehicleController.cameracar.gameObject.GetComponent<PostProcessLayer>().volumeTrigger = VehicleController.cameracar;
+                    }
 
                     GameObject car = hit.collider.gameObject;
                     if (car.name == "BAGAGE")
@@ -179,6 +176,7 @@ namespace vehiclemod
         public override void OnLateUpdate()
         {
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;
+            Acceleration();
             if (vehicles.Count > 0) foreach (var i in vehicles) if (!i.Value) vehicles.Remove(i.Key);
             if (GetObj(MyId) && !isDrive(MyId))
                 NETHost.NetCar(MyId, CarData(MyId)[3], GetObj(MyId).transform.position, GetObj(MyId).transform.rotation);
@@ -216,6 +214,7 @@ namespace vehiclemod
             {
                 SkyCoop.MyMod.MyAnimState = "Sit";
             }
+            VehicleController.prevspeed = VehicleController.curspeed;
         }
         public override void OnFixedUpdate()
         {

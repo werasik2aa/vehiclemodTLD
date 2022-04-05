@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
+using static vehiclemod.data;
 
 
 namespace vehiclemod
@@ -23,7 +24,8 @@ namespace vehiclemod
         private static Text CountSpeed;
         private static Text NameTag;
         private static GameObject template;
-        public static List<string[]> info = new List<string[]>();
+
+        public static Dictionary<string, KeyValuePair<string, string>[]> addonData = new Dictionary<string, KeyValuePair<string, string>[]>();
         public static void menuc()
         {
             GameObject key1 = GameObject.Instantiate(main.lb[0].LoadAsset<GameObject>("menucars"), Vector3.zero, Quaternion.identity);
@@ -51,13 +53,11 @@ namespace vehiclemod
 
             openmenu.GetComponent<Button>().onClick.AddListener(new Action(() => Open(0)));
 
-            //Content.Find("CAR0").GetComponent<Button>().onClick.AddListener(new Action(() => main.SpawnCar(main.MyId, main.levelid, "sedan", Vector3.zero, Quaternion.identity)));
-            //Content.Find("CAR1").GetComponent<Button>().onClick.AddListener(new Action(() => main.SpawnCar(main.MyId, main.levelid, "snowcar", Vector3.zero, Quaternion.identity)));
             ADDCARS();
         }
         private static void ADDCARS()
         {
-            foreach (String[] i in info)
+            foreach (var i in addonData)
             {
                 GameObject item = GameObject.Instantiate(template);
                 item.transform.SetParent(Content);
@@ -65,21 +65,12 @@ namespace vehiclemod
                 Button Car = item.GetComponent<Button>();
                 Text Tag = item.transform.Find("Info").GetComponent<Text>();
                 RawImage Icon = item.transform.Find("Icon").GetComponent<RawImage>();
-                Action spawncar = new Action(() => main.SpawnCar(main.MyId, main.levelid, i[3], Vector3.zero, Quaternion.identity));
+                Action spawncar = new Action(() => main.SpawnCar(main.MyId, main.levelid, GetInfo(i.Key, "Prefab-Name"), Vector3.zero, Quaternion.identity));
 
 
                 Car.onClick.AddListener(spawncar);
-                Tag.text = i[4].Replace("/n", Environment.NewLine);
+                Tag.text = GetInfo(i.Key, "Descriotion").Replace("/n", Environment.NewLine);
 
-                if (i[2] != "NaN")
-                {
-                    Texture2D Texture = new Texture2D(1024, 1024);
-                    Byte[] bytes = File.ReadAllBytes(i[0] + i[2]);
-                    Texture.LoadRawTextureDataImplArray(bytes);
-                    Texture.Apply();
-                    Icon.texture = Texture;
-
-                }
                 item.SetActive(true);
             }
         }

@@ -1,5 +1,7 @@
-﻿using MelonLoader;
+﻿using Il2CppSystem.Reflection;
+using MelonLoader;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace vehiclemod
@@ -65,7 +67,7 @@ namespace vehiclemod
         {
             foreach (var i in main.passanger)
             {
-                if(SkyCoop.MyMod.players[i.Key]) SkyCoop.MyMod.players[i.Key].SetActive(false);
+                if (SkyCoop.MyMod.players[i.Key]) SkyCoop.MyMod.players[i.Key].SetActive(false);
             }
         }
         public static int CountPassangers(int ID)
@@ -97,11 +99,13 @@ namespace vehiclemod
                     if (!sit || !newob) return;
                     newob.transform.SetParent(sit);
                     newob.transform.position = sit.position;
-                    newob.transform.LookAt(sit.transform.forward*2f);
+                    newob.transform.LookAt(sit.transform.forward * 2f);
                     newob.SetActive(true);
                     newob.name = from.ToString();
                 }
-            } else {
+            }
+            else
+            {
                 if (main.passanger.ContainsKey(from))
                 {
                     main.passanger.TryGetValue(from, out int[] data);
@@ -112,6 +116,57 @@ namespace vehiclemod
                     main.passanger.Remove(from);
                 }
             }
+        }
+        public static Component CopyComponent(Component which, GameObject to)
+        {
+            Component added = to.AddComponent(which.GetIl2CppType());
+
+            FieldInfo[] fields = which.GetIl2CppType().GetFields();
+            foreach (FieldInfo field in fields)
+            {
+                field.SetValue(to.GetComponent(which.GetIl2CppType()), field.GetValue(which));
+                if (field.Name == "volumeTrigger") return added;
+                MelonLogger.Msg(which.name + " : " + field.Name + " : " + field.GetValue(which).ToString());
+            }
+            return added;
+        }
+        public static void Acceleration()
+        {
+            if (VehicleController.move != 0)
+            {
+                if (VehicleController.maxspeed - 1 > VehicleController.curspeed)
+                {
+                    if (VehicleController.move > 0)
+                        VehicleController.accel += 2f * Time.deltaTime;
+                    else
+                        VehicleController.accel -= 2f * Time.deltaTime;
+                }
+            }
+            else
+            {
+                if (VehicleController.accel > 0)
+                    VehicleController.accel -= 1f * Time.deltaTime;
+                else
+                    VehicleController.accel += 1f * Time.deltaTime;
+            }
+            if (VehicleController.prevspeed >= VehicleController.curspeed && VehicleController.curspeed <= 0.3) VehicleController.accel = 0;
+            if (!main.isSit) VehicleController.accel = 0;
+        }
+        public static float calkrange(float i) //CALCULATE VOLUME DEPENDS ON RANGE -> P-C
+        {
+            i = i / 100;
+            i = 1 - i;
+            Mathf.Clamp(i, 0, 1);
+            return i;
+        }
+        public static String GetInfo(string addon, string what)
+        {
+            MenuControll.addonData.TryGetValue(addon, out KeyValuePair<string, string>[] keyvals);
+            foreach (var ff in keyvals)
+            {
+                if(what == ff.Key) return ff.Value;
+            }
+            return "NaN";
         }
     }
 }
