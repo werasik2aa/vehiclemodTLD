@@ -12,7 +12,6 @@ namespace vehiclemod
             int packetid = _pak.ReadInt();
             if (packetid == 0000) // MOVE CAR
             {
-                string name = _pak.ReadString();
                 int ID = _pak.ReadInt();
                 Vector3 Position = _pak.ReadVector3();
                 Quaternion Rotation = _pak.ReadQuaternion();
@@ -21,7 +20,7 @@ namespace vehiclemod
                     from = _pak.ReadInt();
                 }
                 if (API.m_ClientState == API.SkyCoopClientState.HOST) API.SendDataToEveryone(_pak, from, true);
-                if (CheckEnv(from)) VehicleController.PlayerCarMove(ID, name, Position, Rotation);
+                if (CheckEnv(from)) VehicleController.PlayerCarMove(ID, Position, Rotation);
             }
 
             if (packetid == 1000) // SPAWN CAR

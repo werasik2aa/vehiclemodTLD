@@ -17,17 +17,6 @@ namespace vehiclemod
             packet.Write(name);
             Send(packet);
         }
-        public static void NetSendMyCar(string CarName, Vector3 pos, Quaternion rot)
-        {
-            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
-            Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
-
-            packet.Write(1011);
-            packet.Write(CarName);
-            packet.Write(pos);
-            packet.Write(rot);
-            Send(packet);
-        }
         public static void NETSIT(int CarID, int SitID)
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
@@ -60,13 +49,12 @@ namespace vehiclemod
             Send(packet);
         }
 
-        public static void NetCar(int CarID, string CarName, Vector3 Position, Quaternion Rotation)
+        public static void NetCar(int CarID, Vector3 Position, Quaternion Rotation)
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(0000);
-            packet.Write(CarName);
             packet.Write(CarID);
             packet.Write(Position);
             packet.Write(Rotation);

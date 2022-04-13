@@ -126,31 +126,8 @@ namespace vehiclemod
             {
                 field.SetValue(to.GetComponent(which.GetIl2CppType()), field.GetValue(which));
                 if (field.Name == "volumeTrigger") return added;
-                MelonLogger.Msg(which.name + " : " + field.Name + " : " + field.GetValue(which).ToString());
             }
             return added;
-        }
-        public static void Acceleration()
-        {
-            if (VehicleController.move != 0)
-            {
-                if (VehicleController.maxspeed - 1 > VehicleController.curspeed)
-                {
-                    if (VehicleController.move > 0)
-                        VehicleController.accel += 2f * Time.deltaTime;
-                    else
-                        VehicleController.accel -= 2f * Time.deltaTime;
-                }
-            }
-            else
-            {
-                if (VehicleController.accel > 0)
-                    VehicleController.accel -= 1f * Time.deltaTime;
-                else
-                    VehicleController.accel += 1f * Time.deltaTime;
-            }
-            if (VehicleController.prevspeed >= VehicleController.curspeed && VehicleController.curspeed <= 0.3) VehicleController.accel = 0;
-            if (!main.isSit) VehicleController.accel = 0;
         }
         public static float calkrange(float i) //CALCULATE VOLUME DEPENDS ON RANGE -> P-C
         {
@@ -164,7 +141,7 @@ namespace vehiclemod
             MenuControll.addonData.TryGetValue(addon, out KeyValuePair<string, string>[] keyvals);
             foreach (var ff in keyvals)
             {
-                if(what == ff.Key) return ff.Value;
+                if (what == ff.Key) return ff.Value;
             }
             return "NaN";
         }
