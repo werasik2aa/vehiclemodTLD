@@ -61,7 +61,6 @@ namespace vehiclemod
 						cameracar.gameObject.AddComponent<Camera>().CopyFrom(GameManager.GetVpFPSCamera().m_Camera.GetComponent<Camera>());
 					cameracar.gameObject.SetActive(true);
 				}
-				if (curspeed > 0.3f) car.transform.Rotate(0, (15f + curspeed) * Time.deltaTime * turn * move, 0);//ROTATE TO
 
 				MotorTorque = 1000 * Time.fixedDeltaTime;
 				if (curspeed == 0) MotorTorque = 750 * Time.fixedDeltaTime * curspeed;
@@ -80,11 +79,9 @@ namespace vehiclemod
 						WheelComponent.Set_BrakeTorque(wheels[i], MotorTorque * 3);
 					}
 
-					WheelComponent.Set_SteerAngle(wheels[i], WheelComponent.Get_SteerAngle(wheels[0]) * 30 * turn * curspeed / 2);
 				}
-
-				wheels[0].localEulerAngles = new Vector3(0, 30 * turn, 0);
-				wheels[1].localEulerAngles = new Vector3(0, 30 * turn, 0);
+				WheelComponent.Set_SteerAngle(wheels[0], 30 * turn);
+				WheelComponent.Set_SteerAngle(wheels[1], 30 * turn);
 
 				UpdateDriver(number, true);
 				NETHost.NetSendDriver(number, true);
@@ -145,6 +142,11 @@ namespace vehiclemod
 				{
 					data.UpdateDriver(number, false);
 					NETHost.NetSendDriver(number, false);
+					foreach(var i in wheels)
+                    {
+						WheelComponent.Set_MotorTorque(i, 0);
+						WheelComponent.Set_BrakeTorque(i, 2000);
+					}
 				}
 
 				GameManager.GetPlayerManagerComponent().TeleportPlayer(main.MyPosition.position - car.transform.right * 2.5f + car.transform.up, Quaternion.identity);

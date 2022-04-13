@@ -268,8 +268,8 @@ namespace vehiclemod
             key1.layer = LayerMask.NameToLayer("Player");
             key1.GetComponent<Rigidbody>().centerOfMass = Vector3.down;
             JointSpring aaa = new JointSpring();
-            aaa.spring = 64f;
-            aaa.damper = 8f;
+            aaa.spring = 400f;
+            aaa.damper = 45f;
             foreach (Transform g in key1.GetComponentsInChildren<Transform>())
             {
                 g.gameObject.layer = LayerMask.NameToLayer("NPC");

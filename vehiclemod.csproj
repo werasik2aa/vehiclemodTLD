@@ -106,8 +106,5 @@
     <Compile Include="VehicleController.cs" />
     <Compile Include="WheelComponent.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Connected Services\" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
