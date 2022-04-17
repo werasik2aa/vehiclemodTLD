@@ -52,23 +52,25 @@ namespace vehiclemod
             {
                 int number = 0;
                 string PATH = i.FullName + "\\";
-                KeyValuePair<string, string>[] dataco = new KeyValuePair<string, string>[1];
 
                 using (StreamReader sr = new StreamReader(PATH + "info.ini"))
                 {
+                    KeyValuePair<string, string>[] dataco = new KeyValuePair<string, string>[1];
+                    string name = "NaN";
                     while (!sr.EndOfStream)
                     {
                         string line = sr.ReadLine();
                         if (line != "" && !line.StartsWith("[") && !line.EndsWith("]") && !line.StartsWith("(") && !line.EndsWith(")"))
                         {
                             string[] data = line.Split('=');
-                            dataco[number] = new KeyValuePair<string, string>(data[0], data[1]);
-                            number++;
-                            Array.Resize(ref dataco, number + 1);
+                            if (data[0] == "Prefab-Name") name = data[1];
+                            dataco[dataco.Length - 1] = new KeyValuePair<string, string>(data[0], data[1]);
+                            Array.Resize(ref dataco, dataco.Length + 1);
                         }
                     }
+                    MenuControll.addonData.Add(name, dataco);
                 }
-                MenuControll.addonData.Add(i.Name, dataco);
+
                 load = AssetBundle.LoadFromFile(PATH + GetInfo(i.Name, "FileName"));
                 if (load)
                 {
@@ -265,27 +267,32 @@ namespace vehiclemod
 
             key1.name = PlayerId.ToString();
             key1.tag = "CarVehicleMod";
-            key1.layer = LayerMask.NameToLayer("Player");
             key1.GetComponent<Rigidbody>().centerOfMass = Vector3.down;
-            JointSpring aaa = new JointSpring();
-            aaa.spring = 400f;
-            aaa.damper = 45f;
-            foreach (Transform g in key1.GetComponentsInChildren<Transform>())
+
+            foreach (Transform g in key1.GetComponentsInChildren<Transform>()) g.gameObject.layer = LayerMask.NameToLayer("NPC");
+            key1.GetComponent<Rigidbody>().mass = int.Parse(GetInfo(name, "Weight"));
+
+            if (int.Parse(GetInfo(name, "Type")) == 0)
             {
-                g.gameObject.layer = LayerMask.NameToLayer("NPC");
-                if(g.name == "FL" || g.name == "FR" || g.name == "BL" || g.name == "BR")
-                {
-                    WheelComponent.AddComponent(g);
-                    WheelComponent.Set_JointSpring(g, aaa);
-                }
+                JointSpring aaa = new JointSpring();
+                aaa.spring = float.Parse(GetInfo(name, "SpringForce"));
+                aaa.damper = float.Parse(GetInfo(name, "DamperForce"));
+
+                foreach (Transform g in key1.GetComponentsInChildren<Transform>()) if (g.name.Contains("FL") || g.name.Contains("FR") || g.name.Contains("BL") || g.name.Contains("BR"))
+                    {
+                        WheelComponent.AddComponent(g);
+                        WheelComponent.Set_JointSpring(g, aaa);
+                    }
             }
-            vehicles.Add(PlayerId, key1);
+
+            key1.layer = LayerMask.NameToLayer("Player");
             if (MyId == PlayerId)
             {
                 NETHost.NetSpawnCar(name, key1.transform.position, key1.transform.rotation);
             }
             UpdateDriver(PlayerId, false);
             UpdateCarData(PlayerId, true, true, 50, name);
+            vehicles.Add(PlayerId, key1);
         }
         private void loot(GameObject bagage)
         {

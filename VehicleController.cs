@@ -1,10 +1,7 @@
 ﻿using UnityEngine;
 using MelonLoader;
 using static vehiclemod.data;
-using System;
-using UnhollowerBaseLib;
 using BringBackComponents;
-using System.Reflection;
 
 namespace vehiclemod
 {
@@ -63,25 +60,22 @@ namespace vehiclemod
 				}
 
 				MotorTorque = 1000 * Time.fixedDeltaTime;
-				if (curspeed == 0) MotorTorque = 750 * Time.fixedDeltaTime * curspeed;
+				if (curspeed <= 0.05) MotorTorque = 1000 * Time.fixedDeltaTime * curspeed;
 
 				for (int i = 0; i != wheels.Length; i++)
 				{
-					if (move != 0)
+					if (move != 0 && !Input.GetKey(KeyCode.Space))
 					{
-						WheelComponent.Set_MotorTorque(wheels[i], MotorTorque * move);
 						WheelComponent.Set_BrakeTorque(wheels[i], 0);
-					}
-
-					if (move == 0 || Input.GetKey(KeyCode.Space))
-					{
+						WheelComponent.Set_MotorTorque(wheels[i], MotorTorque * move);
+					} else {
 						WheelComponent.Set_MotorTorque(wheels[i], 0);
 						WheelComponent.Set_BrakeTorque(wheels[i], MotorTorque * 3);
 					}
-
 				}
-				WheelComponent.Set_SteerAngle(wheels[0], 30 * turn);
-				WheelComponent.Set_SteerAngle(wheels[1], 30 * turn);
+				
+				WheelComponent.Set_SteerAngle(wheels[0], Mathf.Clamp(curspeed * turn + turn * 10, -45, 45));
+				WheelComponent.Set_SteerAngle(wheels[1], Mathf.Clamp(curspeed * turn + turn * 10, -45, 45));
 
 				UpdateDriver(number, true);
 				NETHost.NetSendDriver(number, true);
@@ -116,14 +110,16 @@ namespace vehiclemod
 		}
 		public static void PlayerCarMove(int CarID, Vector3 Position, Quaternion Rotation)
 		{
-			if (!GetObj(CarID) || !main.vehicles.ContainsKey(CarID)) main.SpawnCar(CarID, main.levelid, CarData(CarID)[3], Position, Rotation);
+			Transform car = GetObj(CarID).transform;
+			if (!car || !main.vehicles.ContainsKey(CarID)) 
+				main.SpawnCar(CarID, main.levelid, CarData(CarID)[3], Position, Rotation);
 			else
 			{
-				GetObj(CarID).transform.rotation = Rotation;
-				if (Vector3.Distance(GetObj(CarID).transform.position, Position) > 10)
-					GetObj(CarID).transform.position = Position;
+				car.transform.rotation = Quaternion.Lerp(car.transform.rotation, Rotation, 2f);
+				if (Vector3.Distance(car.transform.position, Position) > 10)
+					car.transform.position = Position;
 				else
-					GetObj(CarID).transform.position = Vector3.Lerp(GetObj(CarID).transform.position, Position, 15);
+					car.transform.position = Vector3.Lerp(car.transform.position, Position, 15);
 			}
 		}
 		public static void SitCar(int number)
