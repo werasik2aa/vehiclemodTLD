@@ -29,7 +29,6 @@ namespace vehiclemod
         public static void menuc()
         {
             GameObject key1 = GameObject.Instantiate(main.lb[0].LoadAsset<GameObject>("menucars"), Vector3.zero, Quaternion.identity);
-            //GameManager.m_ActiveSceneIsRegion;
             key1.transform.Find("Stat").gameObject.SetActive(false);
             key1.transform.Find("Menu").gameObject.SetActive(false);
             key1.transform.Find("MenuCar").gameObject.SetActive(false);
@@ -76,20 +75,22 @@ namespace vehiclemod
         }
         public static void Update(int i)
         {
+            if (!GetObj(main.targetcar)) return;
+            InfoMain gg = GetObj(main.targetcar).GetComponent<VehComponent>().vehicleData;
             if (i == 0 && CountCars)
             {
                 CountCars.text = main.vehicles.Count.ToString();
             }
             if (i == 1 && Speed)
             {
-                Speed.maxValue = VehicleController.maxspeed;
-                Speed.value = VehicleController.curspeed;
-                CountSpeed.text = Mathf.RoundToInt(VehicleController.curspeed).ToString();
+                Speed.maxValue = gg.m_MaxSpeed;
+                Speed.value = gg.m_CurSpeed;
+                CountSpeed.text = Mathf.RoundToInt(gg.m_CurSpeed).ToString();
             }
             if (i == 2 && Fuel)
             {
-                Fuel.maxValue = VehicleController.maxfuel;
-                Fuel.value = VehicleController.curfuel;
+                Fuel.maxValue = gg.m_MaxFuel;
+                Fuel.value = gg.m_CurFuel;
             }
         }
         public static void CarStatScreen(string PlayerName, bool allowsit, bool allowdrive, float fuel)

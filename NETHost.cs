@@ -5,14 +5,18 @@ namespace vehiclemod
 {
     public static class NETHost
     {
-        public static void NetPacketStat(bool allowdrive, bool allowsit, float fuel, string name)
+        public static void NetPacketStat(int carId, bool allowdrive, bool allowsit, bool isdrive, bool sound, bool light, float fuel, string name)
         {
-            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
+            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE || SkyCoop.API.m_ClientState != SkyCoop.API.SkyCoopClientState.HOST) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(0011);
+            packet.Write(carId);
             packet.Write(allowdrive);
             packet.Write(allowsit);
+            packet.Write(isdrive);
+            packet.Write(sound);
+            packet.Write(light);
             packet.Write(Mathf.Round(fuel));
             packet.Write(name);
             Send(packet);
@@ -73,27 +77,18 @@ namespace vehiclemod
 
             Send(packet);
         }
-        public static void NetSoundOn(int ID)
+        public static void NetSound(int ID, bool state)
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(1100);
             packet.Write(ID);
+            packet.Write(state);
 
             Send(packet);
         }
-        public static void NetSoundOff(int ID)
-        {
-            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
-            Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
-
-            packet.Write(1110);
-            packet.Write(ID);
-
-            Send(packet);
-        }
-        public static void NetLightOn(int ID, bool state)
+        public static void NetLight(int ID, bool state)
         {
             if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);

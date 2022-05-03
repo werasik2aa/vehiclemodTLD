@@ -103,6 +103,7 @@
     <Compile Include="NETHost.cs" />
     <Compile Include="PACKETS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VehComponent.cs" />
     <Compile Include="VehicleController.cs" />
     <Compile Include="WheelComponent.cs" />
   </ItemGroup>

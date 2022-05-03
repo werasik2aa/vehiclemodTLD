@@ -7,8 +7,7 @@ namespace vehiclemod
     [HarmonyPatch(typeof(WheelCollider), "LoadWheelCollider")] /* https://github.com/werasik2aa/BringBackComponents */
     public class WheelCollider : Collider
     {
-        public extern WheelCollider(IntPtr Value);
-        public static Il2CppSystem.Type Il2CppType { get; }
+        public WheelCollider(IntPtr Value) : base (Value) { }
         public float radius;
         public bool isGrounded { get; }
         public float steerAngle;

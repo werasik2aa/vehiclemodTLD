@@ -6,7 +6,6 @@ using System;
 using System.IO;
 using static vehiclemod.data;
 using UnityEngine.Rendering.PostProcessing;
-using BringBackComponents;
 using UnhollowerRuntimeLib;
 
 namespace vehiclemod
@@ -17,15 +16,9 @@ namespace vehiclemod
         public static List<AssetBundle> lb = new List<AssetBundle>();
         private Ray ray;
         private RaycastHit hit;
-        public static bool light;
 
         //VEHICLE PART
         public static Dictionary<int, GameObject> vehicles = new Dictionary<int, GameObject>();
-        public static Dictionary<int, String[]> vehicledata = new Dictionary<int, String[]>();
-        public static Dictionary<int, bool> drivers = new Dictionary<int, bool>();
-        public static Dictionary<int, int[]> passanger = new Dictionary<int, int[]>();
-        public static Dictionary<int, GameObject> PlayerCar = new Dictionary<int, GameObject>();
-
         public static Transform MyPosition = null;
         public static int targetcar = 0;
 
@@ -33,24 +26,23 @@ namespace vehiclemod
         public static int levelid = 0;
         public static string levelname = "";
         public static int MyId = 0;
-        private static string MyNick;
 
         //CHECK PART FOR VEHICLE CONTROLLER
         public static bool isSit = false;
         public static bool allowdrive = false;
         public static bool changedDrivePlace = false;
         public static bool isChat = false;
+        private static string MyNick;
         public override void OnApplicationStart()
         {
             DirectoryInfo dir = new DirectoryInfo("Mods/vehiclemod");
             DirectoryInfo[] vehicles = dir.GetDirectories("*");
             AssetBundle load = AssetBundle.LoadFromFile("Mods/vehiclemod\\menu.addon");
             ClassInjector.RegisterTypeInIl2Cpp<WheelCollider>();
+            ClassInjector.RegisterTypeInIl2Cpp<VehComponent>();
             if (load) lb.Add(load);
-            load = null;
             foreach (DirectoryInfo i in vehicles)
             {
-                int number = 0;
                 string PATH = i.FullName + "\\";
 
                 using (StreamReader sr = new StreamReader(PATH + "info.ini"))
@@ -80,23 +72,19 @@ namespace vehiclemod
                 else
                     MelonLogger.Msg("[PREINIT] [" + GetInfo(i.Name, "FileName") + "] File corrupted or not supported. Or maybe not found");
             }
-
             MelonLogger.Msg("[PREINIT] Vehicle mod loaded and vehicle files too");
         }
         public override void OnSceneWasLoaded(int level, string name)
         {
             levelid = level;
             levelname = name;
+            MyNick = SkyCoop.MyMod.MyChatName;
             if (levelname != "Empty" && levelname != "MainMenu" && levelname != "Boot")
             {
                 MelonLogger.Msg("[InitCanvas] Spawning Menu on Level:> " + levelname);
                 MenuControll.menuc();
-                Transform newcam = GameObject.Instantiate(new GameObject("00100"), Vector3.zero, Quaternion.identity).transform;
-                newcam.gameObject.SetActive(false);
-                VehicleController.cameracar = newcam;
             }
             if (GameManager.GetVpFPSPlayer()) VehicleController.myparent = GameManager.GetVpFPSPlayer().transform.parent;
-            passanger.Clear();
         }
         public override void OnUpdate()
         {
@@ -105,10 +93,17 @@ namespace vehiclemod
                 GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
             }
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;//check
-            VehicleController.turn = Input.GetAxis("Horizontal");
-            VehicleController.move = Input.GetAxis("Vertical");
+            if (!VehicleController.cameracar)
+            {
+                VehicleController.cameracar = GameObject.Instantiate(new GameObject("00100"), Vector3.zero, Quaternion.identity).transform;
+                VehicleController.cameracar.gameObject.SetActive(false);
+                VehicleController.cameracar.gameObject.AddComponent<Camera>().CopyFrom(GameManager.GetVpFPSCamera().m_Camera.GetComponent<Camera>());
+                CopyComponent(GameManager.GetVpFPSCamera().m_Camera.GetComponent<CameraEffects>(), VehicleController.cameracar.gameObject);
+                CopyComponent(GameManager.GetVpFPSCamera().m_Camera.GetComponent<FlareLayer>(), VehicleController.cameracar.gameObject);
+                CopyComponent(GameManager.GetVpFPSCamera().m_Camera.GetComponent<PostProcessLayer>(), VehicleController.cameracar.gameObject);
+                VehicleController.cameracar.gameObject.GetComponent<PostProcessLayer>().volumeTrigger = VehicleController.cameracar;
+            }
             MyId = API.m_MyClientID;
-            MyNick = SkyCoop.MyMod.MyChatName;
             ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
             MyPosition = GameManager.GetVpFPSPlayer().transform;
             isChat = SkyCoop.MyMod.chatInput.IsActive();
@@ -117,81 +112,44 @@ namespace vehiclemod
             {
                 if (isSit && allowdrive)
                 {
-                    bool cur = true;
-                    if (light)
-                        cur = false;
-                    else
-                        cur = true;
-
-                    VehicleController.CarLight(targetcar, cur);
-                    NETHost.NetLightOn(targetcar, cur);
+                    GetObj(targetcar).GetComponent<VehComponent>().vehicleData.m_Light = !GetObj(targetcar).GetComponent<VehComponent>().vehicleData.m_Light;
                 }
             }
-            Hide();
-            // fuck
+            // SIT EXECUTE
             if (Input.GetKeyDown(KeyCode.E) && !isChat && !InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled)
             {
-                int number = -1;
                 if (!isSit && Physics.Raycast(ray, out hit, 3f))
                 {
-                    if (!VehicleController.cameracar.GetComponent<Camera>())
-                    {
-                        VehicleController.cameracar.gameObject.AddComponent<Camera>().CopyFrom(GameManager.GetVpFPSCamera().m_Camera.GetComponent<Camera>());
-                        CopyComponent(GameManager.GetVpFPSCamera().m_Camera.GetComponent<CameraEffects>(), VehicleController.cameracar.gameObject);
-                        CopyComponent(GameManager.GetVpFPSCamera().m_Camera.GetComponent<FlareLayer>(), VehicleController.cameracar.gameObject);
-                        CopyComponent(GameManager.GetVpFPSCamera().m_Camera.GetComponent<PostProcessLayer>(), VehicleController.cameracar.gameObject);
-                        VehicleController.cameracar.gameObject.GetComponent<PostProcessLayer>().volumeTrigger = VehicleController.cameracar;
-                    }
-
                     GameObject car = hit.collider.gameObject;
-                    if (car.name == "BAGAGE")
-                    {
-                        loot(car);
-                        MelonLogger.Msg("[Interact] Bagage> " + car.name);
-                        return;
-                    }
-                    try { number = int.Parse(car.name); } catch { return; };
-                    if (!vehicles.ContainsKey(number)) return;
-
+                    if (!car.GetComponent<VehComponent>()) return;
+                    int number = car.GetComponent<VehComponent>().vehicleData.m_OwnerId;
                     allowdrive = !isDrive(number);
-
                     targetcar = number;
                 }
 
                 if (targetcar > -1) VehicleController.SitCar(targetcar);
             }
-
-            if (Input.GetKeyDown(KeyCode.Mouse2))
-                if (VehicleController.cameracar && VehicleController.fps == false)
-                    VehicleController.fps = true;
-                else
-                    VehicleController.fps = false;
-
-            if (InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled)
-            {
-                MenuControll.openmenu.gameObject.SetActive(true);
-            }
-            else
-            {
-                MenuControll.openmenu.gameObject.SetActive(false);
-                if (MenuControll.MenuMainCars) MenuControll.MenuMainCars.gameObject.SetActive(false);
-            }
+            if (Input.GetKeyDown(KeyCode.Mouse2)) VehicleController.fps = !VehicleController.fps;
+            MenuControll.openmenu.gameObject.active = InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled;
+            if (!InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled) MenuControll.MenuMainCars.gameObject.SetActive(false);
         }
         public override void OnFixedUpdate()
         {
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;
-            if (vehicles.Count != 0) foreach (var i in vehicles) if (i.Value) VehicleController.wheel(i.Value);
             if (isSit) VehicleController.MoveDrive(targetcar);
             if (vehicles.Count > 0) foreach (var i in vehicles) if (!i.Value) vehicles.Remove(i.Key);
         }
         public override void OnLateUpdate()
         {
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;
-            if (GetObj(MyId) && !isDrive(MyId))
-            {
-                NETHost.NetCar(MyId, GetObj(MyId).transform.position, GetObj(MyId).transform.rotation);
-                NETHost.NetPacketStat(true, true, VehicleController.curfuel, CarData(MyId)[3]);
-            }
+            if (vehicles.Count > 0) foreach (var i in vehicles)
+                {
+                    InfoMain ii = i.Value.GetComponent<VehComponent>().vehicleData;
+
+                    if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST) NETHost.NetPacketStat(ii.m_OwnerId, ii.m_AllowDrive, ii.m_AllowSit, ii.m_isDrive, ii.m_SoundPlay, ii.m_Light, ii.m_CurFuel, ii.m_VehicleName);
+                    if (!isDrive(ii.m_OwnerId)) NETHost.NetCar(ii.m_OwnerId, i.Value.transform.position, i.Value.transform.rotation);
+                }
+
             MenuControll.Update(0); // COUNT CARS
             MenuControll.Update(1); // COOUNT SPEED
             MenuControll.Update(2); // COUNT FUEL
@@ -199,33 +157,16 @@ namespace vehiclemod
             {
                 MenuControll.Open(1);
             }
-            if (vehicles.Count > 0 && Physics.Raycast(ray, out hit, 3f) && !isSit)
+            if (vehicles.Count > 0 && Physics.Raycast(ray, out hit, 3f) && !isSit && !isChat && !InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled)
             {
                 GameObject ho = hit.transform.gameObject;
-                if (!isChat && !InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled)
-                {
-                    int number;
-                    string othname = "Unknown";
-                    try { number = int.Parse(ho.name); } catch { return; }
-                    if (!vehicledata.ContainsKey(number)) return;
-
-                    othname = SkyCoop.MyMod.playersData[number].m_Name;
-                    if (number == MyId) othname = MyNick;
-
-                    MenuControll.Open(2);
-                    MenuControll.CarStatScreen(othname, bool.Parse(CarData(number)[0]), !isDrive(number), Mathf.Round(VehicleController.curfuel));
-                }
-                else
-                {
-                    MenuControll.Open(22);
-                }
+                if (!ho.GetComponent<VehComponent>()) return;
+                InfoMain values = ho.GetComponent<VehComponent>().vehicleData;
+                MenuControll.Open(2);
+                MenuControll.CarStatScreen(values.m_OwnerName, values.m_AllowSit, !isDrive(values.m_OwnerId), values.m_CurFuel);
             }
             else
                 MenuControll.Open(22);
-            if (isSit)
-            {
-                SkyCoop.MyMod.MyAnimState = "Sit";
-            }
         }
         public static bool deletecar(int PlayerId, int who)
         {
@@ -249,15 +190,12 @@ namespace vehiclemod
         {
             if (Position == Vector3.zero && isSit) return;
             bool a = vehicles.ContainsKey(PlayerId);
-
             if (PlayerId != MyId) if (a) return;
-
             if (PlayerId == MyId && a) if (deletecar(MyId, 0)) NETHost.NetDeleteCar();
-
-
             GameObject key1 = LoadObject(name);
 
             if (!key1) { MelonLogger.Msg("[Car spawner] This Car Doesn't exist: " + name); return; }
+
             if (Position == Vector3.zero)
                 key1 = GameObject.Instantiate(key1, MyPosition.position + MyPosition.up * 2 + MyPosition.forward * 6f, Rotation);
             else
@@ -265,38 +203,17 @@ namespace vehiclemod
 
             MelonLogger.Msg("[Car spawner] CarId |> " + PlayerId + " :Scene: " + SceneId + " :AT: " + Position.ToString() + " <|");
 
-            key1.name = PlayerId.ToString();
-            key1.tag = "CarVehicleMod";
-            key1.GetComponent<Rigidbody>().centerOfMass = Vector3.down;
+            string playername = SkyCoop.MyMod.playersData[PlayerId].m_Name;
+            if (MyId == PlayerId) playername = MyNick;
 
-            foreach (Transform g in key1.GetComponentsInChildren<Transform>()) g.gameObject.layer = LayerMask.NameToLayer("NPC");
-            key1.GetComponent<Rigidbody>().mass = int.Parse(GetInfo(name, "Weight"));
+            key1.AddComponent<VehComponent>().NEWDATA(PlayerId, name, playername);
 
-            if (int.Parse(GetInfo(name, "Type")) == 0)
-            {
-                JointSpring aaa = new JointSpring();
-                aaa.spring = float.Parse(GetInfo(name, "SpringForce"));
-                aaa.damper = float.Parse(GetInfo(name, "DamperForce"));
-
-                foreach (Transform g in key1.GetComponentsInChildren<Transform>()) if (g.name.Contains("FL") || g.name.Contains("FR") || g.name.Contains("BL") || g.name.Contains("BR"))
-                    {
-                        WheelComponent.AddComponent(g);
-                        WheelComponent.Set_JointSpring(g, aaa);
-                    }
-            }
-
-            key1.layer = LayerMask.NameToLayer("Player");
-            if (MyId == PlayerId)
-            {
-                NETHost.NetSpawnCar(name, key1.transform.position, key1.transform.rotation);
-            }
-            UpdateDriver(PlayerId, false);
-            UpdateCarData(PlayerId, true, true, 50, name);
+            if (MyId == PlayerId) NETHost.NetSpawnCar(name, key1.transform.position, key1.transform.rotation);
+            key1.gameObject.layer = LayerMask.NameToLayer("Player");
             vehicles.Add(PlayerId, key1);
         }
         private void loot(GameObject bagage)
         {
-
             GameObject conta = GameObject.Instantiate(Resources.Load<GameObject>("CONTAINER_MetalBox"), Vector3.one, Quaternion.identity);
             conta.transform.root.position = bagage.transform.position;
             conta.transform.SetParent(bagage.transform);
