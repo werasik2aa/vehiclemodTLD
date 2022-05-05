@@ -33,7 +33,7 @@ namespace vehiclemod
 				float dist = Vector3.Distance(GetObj(number).transform.position, GameManager.GetVpFPSPlayer().transform.position);
 				if (GetObj(number) && !InterfaceManager.m_Panel_Loading.IsLoading() && dist > 2)
 				{
-					Transform sit = GetObj(number).transform.Find("SITS/").GetChild(siter - 1);
+					Transform sit = car.transform.Find("SITS").GetChild(siter);
 					GetObj(number).transform.position = GameManager.GetVpFPSPlayer().transform.position + GameManager.GetVpFPSPlayer().transform.up * 5f;
 					foreach (Collider col in GameManager.GetPlayerTransform().GetComponents<Collider>())
 					{
@@ -50,7 +50,7 @@ namespace vehiclemod
 			}
 			if (!main.allowdrive)
 			{
-				Transform sit = GetObj(number).transform.Find("SITS").GetChild(siter-1);
+				Transform sit = GetObj(number).transform.Find("SITS").GetChild(siter);
 				GameManager.GetVpFPSPlayer().transform.parent = sit;
 				GameManager.GetVpFPSPlayer().transform.position = sit.position;
 			}
@@ -65,9 +65,9 @@ namespace vehiclemod
 		public static void SitCar(int number)
 		{
 			GameObject car = GetObj(number);
-			siter = CountPassangers(number) + 1;
-			if (main.allowdrive) siter = 1;
-			if (main.isSit) siter = 0;
+			siter = CountPassangers(number);
+			if (main.allowdrive) siter = 0;
+			if (main.isSit) siter = -1;
 			// PARENT THE LOCAL 3D MODEL TO VEHICLE OR unparent it
 			if (main.isSit)
 			{
@@ -84,14 +84,15 @@ namespace vehiclemod
 				cameracar.SetParent(null);
 				main.targetcar = -1;
 				MenuControll.Open(1);
-				if (CountPassangers(number) == 0 || !isDrive(number)) NETHost.NetSound(number, false);
+				if (CountPassangers(number) == 0 || !isDrive(number)) NETHost.NetSound(number);
 				main.isSit = false;
 				GameManager.GetVpFPSPlayer().transform.SetParent(myparent);
 				GetObj(number).GetComponent<VehComponent>().UpdateSound();
 			}
 			else
 			{
-				if (main.allowdrive) {
+				if (main.allowdrive)
+				{
 					UpdateDriver(number, true);
 					NETHost.NetSendDriver(number, true);
 				}
@@ -105,7 +106,7 @@ namespace vehiclemod
 				MenuControll.Open(11);
 				GameManager.GetVpFPSPlayer().transform.SetParent(sit);
 				GameManager.GetVpFPSPlayer().transform.position = sit.position;
-				NETHost.NetSound(number, true);
+				NETHost.NetSound(number);
 				if (!GetObj(number).GetComponent<VehComponent>().vehicleData.m_SoundPlay) GetObj(number).GetComponent<VehComponent>().UpdateSound();
 			}
 
@@ -122,7 +123,7 @@ namespace vehiclemod
 		{
 			// CAMERA CONTROLLER FOR VEHICLE
 			GameObject car = GetObj(CarId);
-			Transform sit = car.transform.Find("SITS/" + siter);
+			Transform sit = GetObj(CarId).transform.Find("SITS").GetChild(siter);
 			if (!fps)
 			{
 				GameObject player = GetObj(CarId).transform.Find("SITS").GetChild(siter).GetChild(0).gameObject;

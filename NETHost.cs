@@ -23,7 +23,7 @@ namespace vehiclemod
         }
         public static void NETSIT(int CarID, int SitID)
         {
-            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
+            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE || SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(1111);
@@ -33,7 +33,7 @@ namespace vehiclemod
         }
         public static void NetDeleteCar()
         {
-            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
+            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE || SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(0100);
@@ -43,7 +43,7 @@ namespace vehiclemod
         }
         public static void NetSendDriver(int ID, bool drived)
         {
-            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
+            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE || SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(1010);
@@ -67,7 +67,7 @@ namespace vehiclemod
         }
         public static void NetSpawnCar(string name, Vector3 Position, Quaternion Rotation)
         {
-            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
+            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE || SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(1000);
@@ -77,25 +77,23 @@ namespace vehiclemod
 
             Send(packet);
         }
-        public static void NetSound(int ID, bool state)
+        public static void NetSound(int ID)
         {
-            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
+            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE || SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(1100);
             packet.Write(ID);
-            packet.Write(state);
 
             Send(packet);
         }
-        public static void NetLight(int ID, bool state)
+        public static void NetLight(int ID)
         {
-            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE) return;
+            if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.NONE || SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST) return;
             Packet packet = packet = new Packet((int)ClientPackets.CUSTOM);
 
             packet.Write(1101);
             packet.Write(ID);
-            packet.Write(state);
 
             Send(packet);
         }

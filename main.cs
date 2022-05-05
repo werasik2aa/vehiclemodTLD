@@ -113,6 +113,7 @@ namespace vehiclemod
                 if (isSit && allowdrive)
                 {
                     GetObj(targetcar).GetComponent<VehComponent>().vehicleData.m_Light = !GetObj(targetcar).GetComponent<VehComponent>().vehicleData.m_Light;
+                    NETHost.NetLight(targetcar);
                 }
             }
             // SIT EXECUTE
@@ -145,8 +146,6 @@ namespace vehiclemod
             if (vehicles.Count > 0) foreach (var i in vehicles)
                 {
                     InfoMain ii = i.Value.GetComponent<VehComponent>().vehicleData;
-
-                    if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST) NETHost.NetPacketStat(ii.m_OwnerId, ii.m_AllowDrive, ii.m_AllowSit, ii.m_isDrive, ii.m_SoundPlay, ii.m_Light, ii.m_CurFuel, ii.m_VehicleName);
                     if (!isDrive(ii.m_OwnerId)) NETHost.NetCar(ii.m_OwnerId, i.Value.transform.position, i.Value.transform.rotation);
                 }
 

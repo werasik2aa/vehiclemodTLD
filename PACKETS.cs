@@ -20,7 +20,7 @@ namespace vehiclemod
                 {
                     from = _pak.ReadInt();
                 }
-                if (CheckEnv(from)) VehicleController.PlayerCarMove(ID, Position, Rotation);
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.PlayerCarMove(ID, Position, Rotation);
             }
 
             if (packetid == 1000) // SPAWN CAR
@@ -43,13 +43,14 @@ namespace vehiclemod
                 bool sound = _pak.ReadBool();
                 bool light = _pak.ReadBool();
                 float fuel = _pak.ReadFloat();
+                string name = _pak.ReadString();
 
                 if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT)
                 {
                     from = _pak.ReadInt();
                 }
                 string plname = SkyCoop.MyMod.playersData[from].m_Name;
-                if (CheckEnv(from)) UpdateCarData(carid, allowdrive, allowsit, isdrive, sound, light, fuel, plname);
+                if (CheckEnv(from)) UpdateCarData(carid, name, allowdrive, allowsit, isdrive, sound, light, fuel, plname);
             }
             if (packetid == 1100) // SEND Sound ON
             {
@@ -73,7 +74,6 @@ namespace vehiclemod
             if (packetid == 1101) // Turn LIGHT
             {
                 int ID = _pak.ReadInt();
-                bool state = _pak.ReadBool();
                 if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT)
                 {
                     from = _pak.ReadInt();
@@ -89,7 +89,7 @@ namespace vehiclemod
                 {
                     from = _pak.ReadInt();
                 }
-                if (CheckEnv(from)) UpdateDriver(ID, drived);
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) UpdateDriver(ID, drived);
             }
         }
         private static bool CheckEnv(int from)

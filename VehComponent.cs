@@ -43,6 +43,7 @@ namespace vehiclemod
             vehicleData.m_audio = transform.GetComponent<AudioSource>();
             m_Rigidbody = transform.GetComponent<Rigidbody>();
             m_Rigidbody.mass = float.Parse(GetInfo(name, "Weight"));
+            m_Rigidbody.centerOfMass = Vector3.down;
             vehicleData.m_Type = int.Parse(GetInfo(name, "Type"));
             vehicleData.m_MotorTorque = float.Parse(GetInfo(name, "MotorTorque"));
             vehicleData.m_MaxFuel = int.Parse(GetInfo(name, "MaxFuel"));
@@ -60,10 +61,10 @@ namespace vehiclemod
                 }
                 if (g.name.StartsWith("Light"))
                 {
-                    if (!g.GetComponent<Light>())
-                        MelonLogger.Msg("[" + g.name + "] This GameObject doesn't have Light component!");
-                    else
+                    if (g.GetComponent<Light>())
                         vehicleData.m_Lights.Add(g.GetComponent<Light>());
+                    else
+                       MelonLogger.Msg("[" + g.name + "] This GameObject doesn't have Light component!");
                 }
                 if (g.name.StartsWith("Sit")) vehicleData.m_Sits.Add(g);
             }
@@ -88,6 +89,7 @@ namespace vehiclemod
             vehicleData.m_CurSpeed = m_Rigidbody.velocity.magnitude;
             if (CountPassanger() > 0) foreach (int i in vehicleData.Passangers.Keys) SkyCoop.MyMod.players[i].SetActive(false);
             EngineSoundAndLight();
+            NETHost.NetPacketStat(vehicleData.m_OwnerId, vehicleData.m_AllowDrive, vehicleData.m_AllowSit, vehicleData.m_isDrive, vehicleData.m_SoundPlay, vehicleData.m_Light, vehicleData.m_CurFuel, vehicleData.m_VehicleName);
         }
         public void FixedUpdate()
         {
@@ -111,22 +113,26 @@ namespace vehiclemod
             if (vehicleData == null || !enableds || !m_Rigidbody) return;
             if (vehicleData.m_Type == 0)
             {
-                float MotorTorque = 1000 * Time.fixedDeltaTime;
-                if (m_Rigidbody.velocity.magnitude <= 0.05) MotorTorque = 1000 * Time.fixedDeltaTime * vehicleData.m_CurSpeed;
+                float MotorTorque = 100 * vehicleData.m_MotorTorque * Time.fixedDeltaTime;
+                if (m_Rigidbody.velocity.magnitude <= 0.05) MotorTorque = 100 * vehicleData.m_MotorTorque * Time.fixedDeltaTime * vehicleData.m_CurSpeed;
 
                 for (int i = 0; i != vehicleData.m_Wheels.Count; i++)
                 {
-                    if (move != 0 && !Input.GetKey(KeyCode.Space))
+                    if (CountPassanger() == 0 || !vehicleData.m_isDrive) WheelComponent.Set_BrakeTorque(vehicleData.m_Wheels[i], MotorTorque * 3);
+                    if (vehicleData.m_isDrive && main.targetcar == vehicleData.m_OwnerId && main.allowdrive)
                     {
-                        WheelComponent.Set_BrakeTorque(vehicleData.m_Wheels[i], 0);
-                        WheelComponent.Set_MotorTorque(vehicleData.m_Wheels[i], MotorTorque * move);
+                        if (move != 0 && !Input.GetKey(KeyCode.Space))
+                        {
+                            WheelComponent.Set_BrakeTorque(vehicleData.m_Wheels[i], 0);
+                            WheelComponent.Set_MotorTorque(vehicleData.m_Wheels[i], MotorTorque * move);
+                        }
+                        else
+                        {
+                            WheelComponent.Set_MotorTorque(vehicleData.m_Wheels[i], 0);
+                            WheelComponent.Set_BrakeTorque(vehicleData.m_Wheels[i], MotorTorque * 3);
+                        }
+                        if (vehicleData.m_Wheels[i].name.StartsWith("WheelMain")) WheelComponent.Set_SteerAngle(vehicleData.m_Wheels[i], Mathf.Clamp(vehicleData.m_CurSpeed * turn + turn * 10, -45, 45));
                     }
-                    else
-                    {
-                        WheelComponent.Set_MotorTorque(vehicleData.m_Wheels[i], 0);
-                        WheelComponent.Set_BrakeTorque(vehicleData.m_Wheels[i], MotorTorque * 3);
-                    }
-                if (vehicleData.m_Wheels[i].name.StartsWith("WheelMain")) WheelComponent.Set_SteerAngle(vehicleData.m_Wheels[i], Mathf.Clamp(vehicleData.m_CurSpeed * turn + turn * 10, -45, 45));
                 }
             }
         }

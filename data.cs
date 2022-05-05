@@ -16,9 +16,12 @@ namespace vehiclemod
             }
             return i;
         }
-        public static void UpdateCarData(int carid, bool allowdrive, bool allowsit, bool isDrive, bool sound, bool light, float fuel, string playername)
+        public static void UpdateCarData(int carid, string carname, bool allowdrive, bool allowsit, bool isDrive, bool sound, bool light, float fuel, string playername)
         {
-            GetObj(carid).GetComponent<VehComponent>().UpdateMainCarData(carid, allowdrive, allowsit, isDrive, sound, light, fuel, playername);
+            if (GetObj(carid))
+                GetObj(carid).GetComponent<VehComponent>().UpdateMainCarData(carid, allowdrive, allowsit, isDrive, sound, light, fuel, playername);
+            else
+                main.SpawnCar(carid, main.levelid, carname, Vector3.zero, Quaternion.identity);
         }
         public static void UpdateDriver(int CarID, bool state)
         {
@@ -40,7 +43,7 @@ namespace vehiclemod
         }
         public static void UpdatePassanger(int CarID, int Number, int from)
         {
-            if (Number == 0)
+            if (Number == -1)
                 GetObj(CarID).GetComponent<VehComponent>().DeletePassanger(from);
             else
                 GetObj(CarID).GetComponent<VehComponent>().AddPassanger(from, Number);
