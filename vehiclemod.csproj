@@ -48,8 +48,9 @@
     <Reference Include="MelonLoader">
       <HintPath>D:\The Long Dark\MelonLoader\MelonLoader.dll</HintPath>
     </Reference>
-    <Reference Include="SkyCoop">
-      <HintPath>D:\The Long Dark\Mods\SkyCoop.dll</HintPath>
+    <Reference Include="SkyCoop, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\The Long Dark\SkyCoop.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="UnhollowerBaseLib">
@@ -98,6 +99,7 @@
   <ItemGroup>
     <Compile Include="data.cs" />
     <Compile Include="HMpatch.cs" />
+    <Compile Include="IKCOMPONENT.cs" />
     <Compile Include="main.cs" />
     <Compile Include="MenuControll.cs" />
     <Compile Include="NETHost.cs" />

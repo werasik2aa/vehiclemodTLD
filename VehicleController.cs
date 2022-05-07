@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using MelonLoader;
 using static vehiclemod.data;
-using BringBackComponents;
 
 namespace vehiclemod
 {
@@ -19,6 +18,7 @@ namespace vehiclemod
 		private static float curY = 0f;
 		public static float move = 0f;
 		public static float turn = 0f;
+		private static Transform sit;
 		public static void MoveDrive(int number)
 		{
 
@@ -33,34 +33,20 @@ namespace vehiclemod
 				float dist = Vector3.Distance(GetObj(number).transform.position, GameManager.GetVpFPSPlayer().transform.position);
 				if (GetObj(number) && !InterfaceManager.m_Panel_Loading.IsLoading() && dist > 2)
 				{
-					Transform sit = car.transform.Find("SITS").GetChild(siter);
 					GetObj(number).transform.position = GameManager.GetVpFPSPlayer().transform.position + GameManager.GetVpFPSPlayer().transform.up * 5f;
-					foreach (Collider col in GameManager.GetPlayerTransform().GetComponents<Collider>())
-					{
-						col.enabled = false;
-					}
-
+					foreach (Collider col in GameManager.GetPlayerTransform().GetComponents<Collider>()) col.enabled = false;
 					GameManager.GetVpFPSPlayer().transform.parent = sit;
 					GameManager.GetVpFPSPlayer().transform.position = Vector3.Lerp(GameManager.GetVpFPSPlayer().transform.position, GetObj(number).transform.position, 5);
 					if (!cameracar.GetComponent<Camera>())
 						cameracar.gameObject.AddComponent<Camera>().CopyFrom(GameManager.GetVpFPSCamera().m_Camera.GetComponent<Camera>());
 					cameracar.gameObject.SetActive(true);
 				}
-				NETHost.NetCar(number, car.transform.position, car.transform.rotation);
 			}
 			if (!main.allowdrive)
 			{
-				Transform sit = GetObj(number).transform.Find("SITS").GetChild(siter);
 				GameManager.GetVpFPSPlayer().transform.parent = sit;
 				GameManager.GetVpFPSPlayer().transform.position = sit.position;
 			}
-		}
-		public static void PlayerCarMove(int CarID, Vector3 Position, Quaternion Rotation)
-		{
-			GameObject car = GetObj(CarID);
-			car.transform.rotation = Quaternion.Lerp(car.transform.rotation, Rotation, 2f);
-			car.transform.position = Vector3.Lerp(car.transform.position, Position, 15);
-			if (Vector3.Distance(car.transform.position, Position) > 10) car.transform.position = Position;
 		}
 		public static void SitCar(int number)
 		{
@@ -84,10 +70,9 @@ namespace vehiclemod
 				cameracar.SetParent(null);
 				main.targetcar = -1;
 				MenuControll.Open(1);
-				if (CountPassangers(number) == 0 || !isDrive(number)) NETHost.NetSound(number);
 				main.isSit = false;
 				GameManager.GetVpFPSPlayer().transform.SetParent(myparent);
-				GetObj(number).GetComponent<VehComponent>().UpdateSound();
+				if (CountPassangers(number) == 0 || !isDrive(number)) GetObj(number).GetComponent<VehComponent>().UpdateSound(false);
 			}
 			else
 			{
@@ -96,7 +81,7 @@ namespace vehiclemod
 					UpdateDriver(number, true);
 					NETHost.NetSendDriver(number, true);
 				}
-				Transform sit = car.transform.Find("SITS").GetChild(siter);
+				sit = GetObj(number).transform.Find("SITS");
 				if (!sit) return;
 				foreach (Collider col in GameManager.GetPlayerTransform().GetComponents<Collider>()) col.enabled = false;
 				cameracar.gameObject.SetActive(true);
@@ -104,29 +89,28 @@ namespace vehiclemod
 				cameracar.transform.position = cameracenter.position;
 				main.isSit = true;
 				MenuControll.Open(11);
-				GameManager.GetVpFPSPlayer().transform.SetParent(sit);
-				GameManager.GetVpFPSPlayer().transform.position = sit.position;
-				NETHost.NetSound(number);
-				if (!GetObj(number).GetComponent<VehComponent>().vehicleData.m_SoundPlay) GetObj(number).GetComponent<VehComponent>().UpdateSound();
+				GameManager.GetVpFPSPlayer().transform.SetParent(sit.transform);
+				GameManager.GetVpFPSPlayer().transform.position = sit.transform.position;
+				GetObj(number).GetComponent<VehComponent>().UpdateSound(true);
 			}
 
 			UpdatePassanger(number, siter, main.MyId);
 			NETHost.NETSIT(number, siter);
 
 			MelonLogger.Msg("=================================");
-			MelonLogger.Msg("[Sit Manager]: ID | LOCALL | SERVER | COUNTPASSANGER");
+			MelonLogger.Msg("[Sit Manager]: ID | LOCAL | SERVER | COUNTPASSANGER");
 			MelonLogger.Msg("[Sit Manager]: " + number + " | " + main.allowdrive + " | " + isDrive(number) + " | " + CountPassangers(number) + " | " + siter);
 			MelonLogger.Msg("=================================");
 
 		}
+
 		private static void CameraFollow(int CarId)
 		{
 			// CAMERA CONTROLLER FOR VEHICLE
 			GameObject car = GetObj(CarId);
-			Transform sit = GetObj(CarId).transform.Find("SITS").GetChild(siter);
 			if (!fps)
 			{
-				GameObject player = GetObj(CarId).transform.Find("SITS").GetChild(siter).GetChild(0).gameObject;
+				GameObject player = car.transform.Find("SITS/" + main.MyId).gameObject;
 				if (player && !player.active) player.SetActive(true);
 
 				if (main.allowdrive)
@@ -144,7 +128,7 @@ namespace vehiclemod
 			}
 			else
 			{
-				GameObject player = sit.GetChild(0).gameObject;
+				GameObject player = car.transform.Find("SITS/" + main.MyId).gameObject;
 				if (player && player.active) player.SetActive(false);
 				cameracar.transform.SetParent(car.transform);
 				curY = Mathf.Clamp(curY, -60, 90);

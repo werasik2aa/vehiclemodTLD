@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using GameServer;
-using SkyCoop;
 using static vehiclemod.data;
 
 namespace vehiclemod
@@ -11,7 +10,18 @@ namespace vehiclemod
         static void Postfix(SkyCoop.API __instance, Packet _pak, int from)
         {
             int packetid = _pak.ReadInt();
-            if (packetid == 0000) // MOVE CAR
+            if (packetid == 0110) // CHECK EXIST CAR
+            {
+                int CarID = _pak.ReadInt();
+                string carName = _pak.ReadString();
+                if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT)
+                {
+                    from = _pak.ReadInt();
+                }
+                if (CheckEnv(from) && !main.vehicles.ContainsKey(CarID)) main.SpawnCar(CarID, main.MyId, carName, Vector3.one, Quaternion.identity);
+            }
+            if 
+                (packetid == 0000) // MOVE CAR
             {
                 int ID = _pak.ReadInt();
                 Vector3 Position = _pak.ReadVector3();
@@ -20,7 +30,12 @@ namespace vehiclemod
                 {
                     from = _pak.ReadInt();
                 }
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) VehicleController.PlayerCarMove(ID, Position, Rotation);
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID))
+                {
+                    InfoMain i = GetObj(ID).GetComponent<VehComponent>().vehicleData;
+                    i.m_Position = Position; i.m_Rotation = Rotation;
+                    GetObj(ID).GetComponent<VehComponent>().UpdateCarPosition();
+                }
             }
 
             if (packetid == 1000) // SPAWN CAR
@@ -34,32 +49,15 @@ namespace vehiclemod
                 }
                 if (CheckEnv(from)) main.SpawnCar(from, SkyCoop.MyMod.playersData[from].m_Levelid, name, Position, Rotation);
             }
-            if (packetid == 0011) // UPDATE CAR DATA
-            {
-                int carid = _pak.ReadInt();
-                bool allowdrive = _pak.ReadBool();
-                bool allowsit = _pak.ReadBool();
-                bool isdrive = _pak.ReadBool();
-                bool sound = _pak.ReadBool();
-                bool light = _pak.ReadBool();
-                float fuel = _pak.ReadFloat();
-                string name = _pak.ReadString();
-
-                if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT)
-                {
-                    from = _pak.ReadInt();
-                }
-                string plname = SkyCoop.MyMod.playersData[from].m_Name;
-                if (CheckEnv(from)) UpdateCarData(carid, name, allowdrive, allowsit, isdrive, sound, light, fuel, plname);
-            }
             if (packetid == 1100) // SEND Sound ON
             {
                 int ID = _pak.ReadInt();
+                bool state = _pak.ReadBool();
                 if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT)
                 {
                     from = _pak.ReadInt();
                 }
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) GetObj(ID).GetComponent<VehComponent>().UpdateSound();
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) GetObj(ID).GetComponent<VehComponent>().UpdateSound(state);
             }
             if (packetid == 1111) // PASSANGER
             {
@@ -74,11 +72,12 @@ namespace vehiclemod
             if (packetid == 1101) // Turn LIGHT
             {
                 int ID = _pak.ReadInt();
+                bool state = _pak.ReadBool();
                 if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT)
                 {
                     from = _pak.ReadInt();
                 }
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) GetObj(ID).GetComponent<VehComponent>().UpdateLight();
+                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) GetObj(ID).GetComponent<VehComponent>().UpdateLight(state);
             }
             if (packetid == 1010) // SEND Driver
             {
