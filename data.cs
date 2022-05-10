@@ -16,12 +16,9 @@ namespace vehiclemod
             }
             return i;
         }
-        public static void UpdateCarData(int carid, string carname, bool allowdrive, bool allowsit, bool isDrive, bool sound, bool light, float fuel, string playername)
+        public static void UpdateCarData(int carid, bool allowdrive, bool allowsit, bool isDrive, bool sound, bool light, float fuel, string playername)
         {
-            if (GetObj(carid))
-                GetObj(carid).GetComponent<VehComponent>().UpdateMainCarData(carid, allowdrive, allowsit, isDrive, sound, light, fuel, playername);
-            else
-                main.SpawnCar(carid, main.levelid, carname, Vector3.zero, Quaternion.identity);
+            GetObj(carid).GetComponent<VehComponent>().UpdateMainCarData(carid, allowdrive, allowsit, isDrive, sound, light, fuel, playername);
         }
         public static void UpdateDriver(int CarID, bool state)
         {

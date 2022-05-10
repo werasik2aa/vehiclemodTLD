@@ -1,11 +1,13 @@
 ﻿using MelonLoader;
 using UnityEngine;
 using System.Collections.Generic;
+using SkyCoop;
 using System;
 using System.IO;
 using static vehiclemod.data;
 using UnityEngine.Rendering.PostProcessing;
 using UnhollowerRuntimeLib;
+using HarmonyLib;
 
 namespace vehiclemod
 {
@@ -25,14 +27,14 @@ namespace vehiclemod
         public static int levelid = 0;
         public static string levelname = "";
         public static int MyId = 0;
-        public static bool hook = false;
 
         //CHECK PART FOR VEHICLE CONTROLLER
         public static bool isSit = false;
         public static bool allowdrive = false;
         public static bool changedDrivePlace = false;
-        public static bool isChat = false;
+        private static bool isChat = false;
         private static string MyNick = "Locall";
+        public static bool hook = false;
         public override void OnApplicationStart()
         {
             DirectoryInfo dir = new DirectoryInfo("Mods/vehiclemod");
@@ -40,11 +42,7 @@ namespace vehiclemod
             AssetBundle load = AssetBundle.LoadFromFile("Mods/vehiclemod\\menu.addon");
             ClassInjector.RegisterTypeInIl2Cpp<WheelCollider>();
             ClassInjector.RegisterTypeInIl2Cpp<VehComponent>();
-            ClassInjector.RegisterTypeInIl2Cpp<IKVH>();
-            foreach (var i in AppDomain.CurrentDomain.GetAssemblies()) if (i.GetName().Name == "SkyCoop") hook = true;
-            if (hook) MelonLogger.Msg("Integration with [SkyCoop API]"); else MelonLogger.Msg("[SkyCoop API] NOT FOUND!");
-            if (load) lb.Add(load);
-
+            if (load) lb.Add(load); else MelonLogger.Msg("[PREINIT] ERROR! Menu Coud not be loaded!");
             foreach (DirectoryInfo i in vehicles)
             {
                 string PATH = i.FullName + "\\";
@@ -76,13 +74,17 @@ namespace vehiclemod
                 else
                     MelonLogger.Msg("[PREINIT] [" + GetInfo(i.Name, "FileName") + "] File corrupted or not supported. Or maybe not found");
             }
-            MelonLogger.Msg("[PREINIT] Vehicle mod loaded and vehicle files too");
+            MelonLogger.Msg("[PREINIT] Vehicle mod preloaded");
+            foreach (var i in AppDomain.CurrentDomain.GetAssemblies()) if (i.GetName().Name == "SkyCoop") { hook = true; break; }
+
+
+            if (hook) MelonLogger.Msg("This Game have [SkyCoop]"); else MelonLogger.Msg("[SkyCoop] Not Found.");
         }
         public override void OnSceneWasLoaded(int level, string name)
         {
             levelid = level;
             levelname = name;
-            if (hook) MyNick = SkyCoop.MyMod.MyChatName;
+            MyNick = SkyCoop.MyMod.MyChatName;
             if (levelname != "Empty" && levelname != "MainMenu" && levelname != "Boot")
             {
                 MelonLogger.Msg("[InitCanvas] Spawning Menu on Level:> " + levelname);
@@ -92,10 +94,7 @@ namespace vehiclemod
         }
         public override void OnUpdate()
         {
-            if (hook) if (SkyCoop.MyMod.LoadingScreenIsOn && VehicleController.myparent)
-            {
-                GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
-            }
+            if (hook) if (SkyCoop.MyMod.LoadingScreenIsOn && VehicleController.myparent) GameManager.GetVpFPSPlayer().transform.SetParent(VehicleController.myparent);
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;//check
             if (!VehicleController.cameracar)
             {
@@ -107,12 +106,12 @@ namespace vehiclemod
                 CopyComponent(GameManager.GetVpFPSCamera().m_Camera.GetComponent<PostProcessLayer>(), VehicleController.cameracar.gameObject);
                 VehicleController.cameracar.gameObject.GetComponent<PostProcessLayer>().volumeTrigger = VehicleController.cameracar;
             }
-            if (hook) MyId = SkyCoop.API.m_MyClientID;
-            if (hook) isChat = SkyCoop.MyMod.chatInput.IsActive();
+            MyId = API.m_MyClientID;
             ray = GameManager.GetVpFPSCamera().m_Camera.ScreenPointToRay(Input.mousePosition);
             MyPosition = GameManager.GetVpFPSPlayer().transform;
+            if (hook) isChat = SkyCoop.MyMod.chatInput.IsActive();
 
-            if (Input.GetKeyDown(KeyCode.L) && !isChat && isSit && allowdrive) GetObj(targetcar).GetComponent<VehComponent>().vehicleData.m_Light = !GetObj(targetcar).GetComponent<VehComponent>().vehicleData.m_Light;
+            if (Input.GetKeyDown(KeyCode.L) && !isChat) GetObj(targetcar).GetComponent<VehComponent>().vehicleData.m_Light = !GetObj(targetcar).GetComponent<VehComponent>().vehicleData.m_Light;
             // SIT EXECUTE
             if (Input.GetKeyDown(KeyCode.E) && !isChat && !InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled)
             {
@@ -124,6 +123,7 @@ namespace vehiclemod
                     allowdrive = isDrive(number);
                     targetcar = number;
                 }
+
                 if (targetcar > -1) VehicleController.SitCar(targetcar);
             }
             if (Input.GetKeyDown(KeyCode.Mouse2)) VehicleController.fps = !VehicleController.fps;
@@ -134,6 +134,7 @@ namespace vehiclemod
         {
             if (levelname == "Empty" || levelname == "MainMenu" || levelname == "Boot" || levelname == "" || !GameManager.GetPlayerTransform()) return;
             if (isSit) VehicleController.MoveDrive(targetcar);
+            if (vehicles.Count > 0) foreach (var i in vehicles) if (!i.Value) vehicles.Remove(i.Key);
         }
         public override void OnLateUpdate()
         {
@@ -180,7 +181,7 @@ namespace vehiclemod
             if (Position == Vector3.zero && isSit) return;
             bool a = vehicles.ContainsKey(PlayerId);
             if (PlayerId != MyId) if (a) return;
-            if (PlayerId == MyId && a) if (deletecar(MyId, 0)) NETHost.NetDeleteCar();
+            if (PlayerId == MyId && a) if (deletecar(MyId, 0)) NETHost.NetDeleteCar(PlayerId);
             GameObject key1 = LoadObject(name);
 
             if (!key1) { MelonLogger.Msg("[Car spawner] This Car Doesn't exist: " + name); return; }
@@ -191,14 +192,14 @@ namespace vehiclemod
                 key1 = GameObject.Instantiate(key1, Position, Rotation);
 
             MelonLogger.Msg("[Car spawner] CarId |> " + PlayerId + " :Scene: " + SceneId + " :AT: " + Position.ToString() + " <|");
-            string playername;
 
-            if (hook) if (MyId == PlayerId) playername = MyNick; else playername = SkyCoop.MyMod.playersData[PlayerId].m_Name;
-            else playername = "Locall";
+            string playername = "Locall";
+            if (hook) playername = SkyCoop.MyMod.playersData[PlayerId].m_Name;
+            if (MyId == PlayerId) playername = MyNick;
 
             key1.AddComponent<VehComponent>().NEWDATA(PlayerId, name, playername);
 
-            if (MyId == PlayerId) NETHost.NetSpawnCar(name, key1.transform.position, key1.transform.rotation);
+            if (MyId == PlayerId) NETHost.NetSpawnCar(PlayerId, name, key1.transform.position, key1.transform.rotation);
             key1.gameObject.layer = LayerMask.NameToLayer("Player");
             vehicles.Add(PlayerId, key1);
         }
@@ -226,6 +227,11 @@ namespace vehiclemod
                 return false;
 
             return true;
+        }
+        private void DOPATCH()
+        {
+            /*Harmony.HarmonyMethod newpost = new Harmony.HarmonyMethod(typeof(SkyCoop_HandleData), nameof(SkyCoop_HandleData.Postfix));
+            Harmony.Patch(AccessTools.Method(typeof(SkyCoop.API), "CustomEventCallback"), null, newpost); //PATCH THE SKYCOOP*/
         }
     }
 }

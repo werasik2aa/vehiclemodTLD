@@ -4,8 +4,6 @@ using BringBackComponents;
 using System.Collections.Generic;
 using MelonLoader;
 using static vehiclemod.data;
-using UnhollowerRuntimeLib;
-
 namespace vehiclemod
 {
     public class InfoMain
@@ -30,9 +28,7 @@ namespace vehiclemod
         public bool m_isDrive = false;
         public bool m_SoundPlay = false;
         public bool m_Light = false;
-        public AudioSource m_audio = null;
-        public Vector3 m_Position;
-        public Quaternion m_Rotation;
+        public AudioSource m_audio;
     }
     public class VehComponent : MonoBehaviour
     {
@@ -48,7 +44,7 @@ namespace vehiclemod
             vehicleData.m_audio = transform.GetComponent<AudioSource>();
             m_Rigidbody = transform.GetComponent<Rigidbody>();
             m_Rigidbody.mass = float.Parse(GetInfo(name, "Weight"));
-            m_Rigidbody.centerOfMass = Vector3.down;
+            m_Rigidbody.centerOfMass = Vector3.down * 1.3f;
             vehicleData.m_Type = int.Parse(GetInfo(name, "Type"));
             vehicleData.m_MotorTorque = float.Parse(GetInfo(name, "MotorTorque"));
             vehicleData.m_MaxFuel = int.Parse(GetInfo(name, "MaxFuel"));
@@ -61,20 +57,19 @@ namespace vehiclemod
             {
                 if (g.name.StartsWith("Wheel"))
                 {
-                    if (g.GetChild(0))
-                    {
-                        g.gameObject.layer = LayerMask.NameToLayer("Player");
+                    if (g.GetChild(0)) {
                         vehicleData.m_Wheels.Add(g);
-                        if (g.name.EndsWith("Main")) vehicleData.m_Wheels_main.Add(g);
-                        if (g.GetChild(0)) g.GetChild(0).gameObject.layer = LayerMask.NameToLayer("NPC");
-                    } else g.gameObject.layer = LayerMask.NameToLayer("NPC");
+                        g.gameObject.layer = LayerMask.NameToLayer("Player");
+                        if(g.name.EndsWith("Main")) vehicleData.m_Wheels_main.Add(g);
+                        g.GetChild(0).gameObject.layer = LayerMask.NameToLayer("NPC");
+                    } else { LayerMask.NameToLayer("NPC"); }
                 }
                 if (g.name.StartsWith("Light"))
                 {
-                    if (g.GetComponent<Light>())
-                        vehicleData.m_Lights.Add(g.GetComponent<Light>());
-                    else
+                    if (!g.GetComponent<Light>())
                         MelonLogger.Msg("[" + g.name + "] This GameObject doesn't have Light component!");
+                    else
+                        vehicleData.m_Lights.Add(g.GetComponent<Light>());
                 }
                 if (g.name.StartsWith("Sit")) vehicleData.m_Sits.Add(g);
             }
@@ -101,10 +96,14 @@ namespace vehiclemod
         {
             if (!check()) return;
             vehicleData.m_CurSpeed = m_Rigidbody.velocity.magnitude;
-            if (CountPassanger() > 0) foreach (int i in vehicleData.Passangers.Keys) if (SkyCoop.MyMod.players[i]) SkyCoop.MyMod.players[i].SetActive(false); else DeletePassanger(i);
+
             EngineSoundAndLight();
-            SendData();
-            if (vehicleData.m_isDrive && (main.targetcar != vehicleData.m_OwnerId || !main.allowdrive)) UpdateCarPosition();
+
+            if (main.hook)
+            {
+                if (CountPassanger() > 0) foreach (int i in vehicleData.Passangers.Keys) SkyCoop.MyMod.players[i].SetActive(false);
+                DataSend(SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST);
+            }
         }
         public void Update()
         {
@@ -114,7 +113,6 @@ namespace vehiclemod
             if (vehicleData.m_Type <= 1)
             {
                 float MotorTorque = 80 * vehicleData.m_MotorTorque * Time.fixedDeltaTime;
-
                 foreach (var wheelpost in vehicleData.m_Wheels)
                 {
                     if (wheelpost.GetChild(0))
@@ -124,17 +122,14 @@ namespace vehiclemod
                         if (vehicleData.m_Type == 0) Wheel_BodyTarget.position = pos;
                         Wheel_BodyTarget.rotation = rot;
                     }
-                    if (!vehicleData.m_isDrive)
-                    {
-                        WheelComponent.Set_BrakeTorque(wheelpost, MotorTorque * 3);
-                    }
+                    if (!vehicleData.m_isDrive) WheelComponent.Set_BrakeTorque(wheelpost, MotorTorque * 3);
                     if (vehicleData.m_isDrive && main.targetcar == vehicleData.m_OwnerId && main.allowdrive)
                     {
                         WheelComponent.Set_MotorTorque(wheelpost, MotorTorque * move);
                         if (move == 0) WheelComponent.Set_BrakeTorque(wheelpost, MotorTorque * 3);
                         else WheelComponent.Set_BrakeTorque(wheelpost, 0);
                         if (vehicleData.m_Wheels_main.Contains(wheelpost)) WheelComponent.Set_SteerAngle(wheelpost, Mathf.Clamp(vehicleData.m_CurSpeed * turn + turn * 10, -45, 45));
-                        if(vehicleData.m_Type == 1) transform.rotation = Quaternion.LookRotation(transform.forward);
+                        if (vehicleData.m_Type == 1) transform.rotation = Quaternion.LookRotation(transform.position + wheelpost.transform.forward);
                     }
                 }
             }
@@ -166,22 +161,24 @@ namespace vehiclemod
         }
         public void AddPassanger(int from, int where)
         {
-            if (!main.hook) return;
-            Transform sit = transform.Find("SITS");
-            GameObject newob = GameObject.Instantiate(SkyCoop.MyMod.players[from], sit);
-            Transform sitpos = vehicleData.m_Sits[where];
-            newob.transform.position = sitpos.position;
-            newob.transform.rotation = sitpos.rotation;
-            newob.name = from.ToString();
-            newob.SetActive(true);
+            if (main.hook)
+            {
+                Transform sit = vehicleData.m_Sits[where];
+                GameObject newob = GameObject.Instantiate(SkyCoop.MyMod.players[from], sit);
 
+                newob.transform.position = sit.position;
+                newob.transform.rotation = sit.rotation;
+                newob.SetActive(true);
+            }
             vehicleData.Passangers.Add(from, where);
-            newob.AddComponent<IKVH>().Init(vehicleData.m_OwnerId, where);
         }
         public void DeletePassanger(int from)
         {
-            if (!main.hook) return;
-            GameObject.Destroy(transform.Find("SITS/"+from).gameObject);
+            if (main.hook)
+            {
+                vehicleData.Passangers.TryGetValue(from, out int sit);
+                GameObject.Destroy(vehicleData.m_Sits[sit].GetChild(0).gameObject);
+            }
             vehicleData.Passangers.Remove(from);
         }
         public void UpdateDriver(bool state)
@@ -192,7 +189,7 @@ namespace vehiclemod
         {
             if (vehicleData.m_isDrive) return false;
             if (!vehicleData.m_AllowDrive) return false;
-            if (!vehicleData.m_isDrive && vehicleData.m_AllowDrive) return true;
+            if (vehicleData.m_AllowDrive) return true;
             else return false;
         }
         public int CountPassanger()
@@ -210,32 +207,30 @@ namespace vehiclemod
             vehicleData.m_SoundPlay = sound;
             vehicleData.m_Light = light;
         }
-        public void UpdateLight(bool state)
+        public void UpdateLight(bool turn)
         {
-            vehicleData.m_Light = state;
-            NETHost.NetLight(vehicleData.m_OwnerId, state);
+            vehicleData.m_Light = turn;
         }
-        public void UpdateSound(bool state)
+        public void UpdateSound(bool turn)
         {
-            vehicleData.m_SoundPlay = state;
-                NETHost.NetSound(vehicleData.m_OwnerId, state);
+            vehicleData.m_SoundPlay = turn;
         }
-        private void SendData()
+        public void DataSend(bool e)
         {
-                if (SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST)
-                {
-                    NETHost.NetSendDriver(vehicleData.m_OwnerId, vehicleData.m_isDrive);
-                    NETHost.NetLight(vehicleData.m_OwnerId, vehicleData.m_Light);
-                    NETHost.NetSound(vehicleData.m_OwnerId, vehicleData.m_SoundPlay);
-                    NETHost.NETSEND(vehicleData.m_OwnerId, vehicleData.m_VehicleName);
-                }
-                if(vehicleData.m_isDrive && (main.targetcar != vehicleData.m_OwnerId || !main.allowdrive)) NETHost.NetCar(vehicleData.m_OwnerId, vehicleData.m_Position, vehicleData.m_Rotation);
+            if (e)
+            {
+                NETHost.NetSendDriver(vehicleData.m_OwnerId, vehicleData.m_isDrive);
+                NETHost.NetLight(vehicleData.m_OwnerId, vehicleData.m_Light);
+                NETHost.NetSound(vehicleData.m_OwnerId, vehicleData.m_SoundPlay);
+                NETHost.NetSpawnCar(vehicleData.m_OwnerId, vehicleData.m_VehicleName, transform.position, transform.rotation);
+                NETHost.NetCar(vehicleData.m_OwnerId, transform.position, transform.rotation);
+            }
         }
-        public void UpdateCarPosition()
+        public void MoveIt(Vector3 Position, Quaternion Rotation)
         {
-            transform.rotation = Quaternion.Lerp(transform.rotation, vehicleData.m_Rotation, 2f);
-            transform.position = Vector3.Lerp(transform.position, vehicleData.m_Position, 15);
-            if (Vector3.Distance(transform.position, vehicleData.m_Position) > 10) transform.position = vehicleData.m_Position;
+            transform.rotation = Quaternion.Lerp(transform.rotation, Rotation, 1f);
+            transform.position = Vector3.Lerp(transform.position, Position, 1f);
+            if (Vector3.Distance(transform.position, Position) > 10) transform.position = Position;
         }
         private bool check()
         {

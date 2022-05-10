@@ -10,7 +10,7 @@ using MelonLoader;
 [assembly: AssemblyCopyright("Copyright ©  2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: MelonInfo(typeof(vehiclemod.main), "VehicleMod", "1.3H", "NopirateOnlySteam")]
+[assembly: MelonInfo(typeof(vehiclemod.main), "VehicleMod", "1.35E", "NopirateOnlySteam")]
 [assembly: MelonGame("Hinterland", "TheLongDark")]
 [assembly: ComVisible(false)]
 [assembly: Guid("b1e85fa5-23d9-48b6-9d96-e9afe7c41d28")]
