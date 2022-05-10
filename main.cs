@@ -21,7 +21,7 @@ namespace vehiclemod
         //VEHICLE PART
         public static Dictionary<int, GameObject> vehicles = new Dictionary<int, GameObject>();
         public static Transform MyPosition = null;
-        public static int targetcar = 0;
+        public static int targetcar = -1;
 
         //LEVEL PART
         public static int levelid = 0;
@@ -123,8 +123,7 @@ namespace vehiclemod
                     allowdrive = isDrive(number);
                     targetcar = number;
                 }
-
-                if (targetcar > -1) VehicleController.SitCar(targetcar);
+                if (targetcar >= 0) VehicleController.SitCar(targetcar);
             }
             if (Input.GetKeyDown(KeyCode.Mouse2)) VehicleController.fps = !VehicleController.fps;
             MenuControll.openmenu.gameObject.active = InterfaceManager.m_Panel_PauseMenu.isActiveAndEnabled;

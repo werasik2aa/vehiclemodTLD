@@ -129,7 +129,7 @@ namespace vehiclemod
                         if (move == 0) WheelComponent.Set_BrakeTorque(wheelpost, MotorTorque * 3);
                         else WheelComponent.Set_BrakeTorque(wheelpost, 0);
                         if (vehicleData.m_Wheels_main.Contains(wheelpost)) WheelComponent.Set_SteerAngle(wheelpost, Mathf.Clamp(vehicleData.m_CurSpeed * turn + turn * 10, -45, 45));
-                        if (vehicleData.m_Type == 1) transform.rotation = Quaternion.LookRotation(transform.position + wheelpost.transform.forward);
+                        if (vehicleData.m_Type == 1) transform.rotation = Quaternion.LookRotation(wheelpost.transform.forward);
                     }
                 }
             }
@@ -223,8 +223,8 @@ namespace vehiclemod
                 NETHost.NetLight(vehicleData.m_OwnerId, vehicleData.m_Light);
                 NETHost.NetSound(vehicleData.m_OwnerId, vehicleData.m_SoundPlay);
                 NETHost.NetSpawnCar(vehicleData.m_OwnerId, vehicleData.m_VehicleName, transform.position, transform.rotation);
-                NETHost.NetCar(vehicleData.m_OwnerId, transform.position, transform.rotation);
             }
+            NETHost.NetCar(vehicleData.m_OwnerId, transform.position, transform.rotation);
         }
         public void MoveIt(Vector3 Position, Quaternion Rotation)
         {

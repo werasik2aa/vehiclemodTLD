@@ -79,6 +79,7 @@ namespace vehiclemod
 			{
 				sit = GetObj(number).GetComponent<VehComponent>().vehicleData.m_Sits[siter];
 				if (!sit) return;
+				Transform parenter = GetObj(number).transform.Find("SITS");
 				if (main.allowdrive) {
 					UpdateDriver(number, true);
 					NETHost.NetSendDriver(number, true);
@@ -89,7 +90,7 @@ namespace vehiclemod
 				cameracar.transform.position = cameracenter.position;
 				main.isSit = true;
 				MenuControll.Open(11);
-				GameManager.GetVpFPSPlayer().transform.SetParent(sit);
+				GameManager.GetVpFPSPlayer().transform.SetParent(parenter);
 				GameManager.GetVpFPSPlayer().transform.position = sit.position;
 				NETHost.NetSound(number, true);
 				if (!GetObj(number).GetComponent<VehComponent>().vehicleData.m_SoundPlay) GetObj(number).GetComponent<VehComponent>().UpdateSound(true);
@@ -109,7 +110,7 @@ namespace vehiclemod
 			GameObject car = GetObj(CarId);
 			if (!fps)
 			{
-				GameObject player = sit.GetChild(0).gameObject;
+				GameObject player = GetObj(CarId).GetComponent<VehComponent>().vehicleData.m_Sits[siter].GetChild(0).gameObject;
 				cameracar.transform.SetParent(null);
 				if (player && !player.active) player.SetActive(true);
 				Vector3 range = -Vector3.forward * 6f;
@@ -123,7 +124,7 @@ namespace vehiclemod
 			}
 			else
 			{
-				GameObject player = sit.GetChild(0).gameObject;
+				GameObject player = GetLocalSit(CarId, siter).gameObject;
 				if (player && player.active) player.SetActive(false);
 				cameracar.transform.SetParent(car.transform);
 				curY = Mathf.Clamp(curY, -60, 90);
@@ -131,6 +132,14 @@ namespace vehiclemod
 				cameracar.transform.localRotation = Quaternion.Euler(-curY, curX, 0);
 				cameracar.transform.position = sit.position + car.transform.up * 1.7f;
 			}
+		}
+		private static Transform GetLocalSit(int CarId, int place)
+		{
+			InfoMain a = GetObj(CarId).GetComponent<VehComponent>().vehicleData;
+			if (place == -1) return null;
+			if (!a.m_Sits[siter]) return null;
+			if (a.m_Sits[place].GetChildCount() == 1) return a.m_Sits[place].GetChild(0);
+			return a.m_Sits[place].GetChild(a.m_Sits[place].GetChildCount() - 1);
 		}
 	}
 }

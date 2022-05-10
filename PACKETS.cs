@@ -17,14 +17,14 @@ namespace vehiclemod
                 Quaternion Rotation = _pak.ReadQuaternion();
 
                 if(from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT) from = _pak.ReadInt();
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID) && !(main.allowdrive && main.targetcar == GetObj(ID).GetComponent<VehComponent>().vehicleData.m_OwnerId)) GetObj(ID).GetComponent<VehComponent>().MoveIt(Position, Rotation);
+                if (CheckEnv(from) && checkmy(ID)) GetObj(ID).GetComponent<VehComponent>().MoveIt(Position, Rotation);
             }
             if (packetid == 0100) // DELETE CAR
             {
                 int ID = _pak.ReadInt();
 
                 if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT) from = _pak.ReadInt();
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) { GameObject.Destroy(GetObj(ID)); main.vehicles.Remove(ID); }
+                if (CheckEnv(from) && checkmy(ID)) { GameObject.Destroy(GetObj(ID)); main.vehicles.Remove(ID); }
             }
             if (packetid == 1000) // SPAWN CAR
             {
@@ -42,7 +42,7 @@ namespace vehiclemod
                 bool lig = _pak.ReadBool();
 
                 if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT) from = _pak.ReadInt();
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) GetObj(ID).GetComponent<VehComponent>().UpdateSound(lig);
+                if (CheckEnv(from) && checkmy(ID)) GetObj(ID).GetComponent<VehComponent>().UpdateSound(lig);
             }
             if (packetid == 1111) // PASSANGER
             {
@@ -50,7 +50,7 @@ namespace vehiclemod
                 int SitID = _pak.ReadInt();
 
                 if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT) from = _pak.ReadInt();
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) UpdatePassanger(ID, SitID, from);
+                if (CheckEnv(from) && checkmy(ID)) UpdatePassanger(ID, SitID, from);
             }
             if (packetid == 1101) // Turn LIGHT
             {
@@ -58,7 +58,7 @@ namespace vehiclemod
                 bool state = _pak.ReadBool();
 
                 if (from == -1 && SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.CLIENT) from = _pak.ReadInt();
-                if (CheckEnv(from) && main.vehicles.ContainsKey(ID)) GetObj(ID).GetComponent<VehComponent>().UpdateLight(state);
+                if (CheckEnv(from) && checkmy(ID)) GetObj(ID).GetComponent<VehComponent>().UpdateLight(state);
             }
             if (packetid == 1010) // SEND Driver
             {
@@ -71,10 +71,13 @@ namespace vehiclemod
         }
         private static bool CheckEnv(int from)
         {
-            if (from == main.MyId || main.levelid != SkyCoop.MyMod.playersData[from].m_Levelid)
-                return false;
-            else
-                return true;
+            if (from == main.MyId || main.levelid != SkyCoop.MyMod.playersData[from].m_Levelid) return false;
+            return true;
+        }
+        private static bool checkmy(int ID)
+        {
+            if (main.vehicles.ContainsKey(ID) && !(main.allowdrive && main.targetcar == GetObj(ID).GetComponent<VehComponent>().vehicleData.m_OwnerId)) return true;
+            return false;
         }
     }
 }
