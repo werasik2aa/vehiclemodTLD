@@ -59,8 +59,7 @@ namespace vehiclemod
     {
         private static void Prefix()
         {
-            if (main.levelname != "Empty" && main.levelname != "MainMenu" && main.levelname != "Boot" && main.levelname != "" && GameManager.GetPlayerTransform())
-                if (VehicleController.myparent != GameManager.GetPlayerTransform().transform.parent) GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
+            if (VehicleController.myparent != GameManager.GetPlayerTransform().transform.parent) GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
             if(data.GetObj(main.targetcar)) GameObject.DontDestroyOnLoad(data.GetObj(main.targetcar));
             if(main.isSit) main.changedDrivePlace = true;
         }
@@ -70,8 +69,7 @@ namespace vehiclemod
     {
         public static void Prefix()
         {
-            if (main.levelname != "Empty" && main.levelname != "MainMenu" && main.levelname != "Boot" && main.levelname != "" && GameManager.GetPlayerTransform())
-                if (VehicleController.myparent != GameManager.GetPlayerTransform().transform.parent) GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
+            if (VehicleController.myparent != GameManager.GetPlayerTransform().transform.parent) GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
             if (data.GetObj(main.targetcar)) GameObject.DontDestroyOnLoad(data.GetObj(main.targetcar));
             if (main.isSit) main.changedDrivePlace = true;
         }
@@ -81,8 +79,7 @@ namespace vehiclemod
     {
         public static void Prefix()
         {
-            if (main.levelname != "Empty" && main.levelname != "MainMenu" && main.levelname != "Boot" && main.levelname != "" && GameManager.GetPlayerTransform())
-                if (VehicleController.myparent != GameManager.GetPlayerTransform().transform.parent) GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
+            if (VehicleController.myparent != GameManager.GetPlayerTransform().transform.parent) GameManager.GetPlayerTransform().transform.SetParent(VehicleController.myparent);
             if (data.GetObj(main.targetcar)) GameObject.DontDestroyOnLoad(data.GetObj(main.targetcar));
             if (main.isSit) main.changedDrivePlace = true;
         }

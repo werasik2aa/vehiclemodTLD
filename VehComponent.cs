@@ -29,6 +29,8 @@ namespace vehiclemod
         public bool m_SoundPlay = false;
         public bool m_Light = false;
         public AudioSource m_audio;
+        public Vector3 m_Position = Vector3.zero;
+        public Quaternion m_Rotation = Quaternion.Euler(0, 0, 0);
     }
     public class VehComponent : MonoBehaviour
     {
@@ -37,6 +39,8 @@ namespace vehiclemod
         public InfoMain vehicleData = null;
         public Rigidbody m_Rigidbody;
         public bool enableds = false;
+        public bool iDrive = false;
+        public bool byNet = false;
         public void NEWDATA(int PlayerId, string name, string PlayerName)
         {
             vehicleData = new InfoMain();
@@ -95,26 +99,30 @@ namespace vehiclemod
         public void LateUpdate()
         {
             if (!check()) return;
+            if (!vehicleData.m_isDrive) byNet = false;
             vehicleData.m_CurSpeed = m_Rigidbody.velocity.magnitude;
 
             EngineSoundAndLight();
 
             if (main.hook)
             {
-                if (CountPassanger() > 0) foreach (int i in vehicleData.Passangers.Keys) SkyCoop.MyMod.players[i].SetActive(false);
-                DataSend(SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST);
+                if (CountPassanger() > 0) foreach (int i in vehicleData.Passangers.Keys) if(SkyCoop.MyMod.players[i]) SkyCoop.MyMod.players[i].SetActive(false);
+                DataSend(SkyCoop.API.m_ClientState == SkyCoop.API.SkyCoopClientState.HOST, iDrive);
             }
         }
-        public void Update()
+        public void FixedUpdate()
         {
             move = Input.GetAxis("Vertical");
             turn = Input.GetAxis("Horizontal");
             if (!check()) return;
+            iDrive = main.allowdrive && main.targetcar == vehicleData.m_OwnerId;
+            MoveIt();
             if (vehicleData.m_Type <= 1)
             {
                 float MotorTorque = 80 * vehicleData.m_MotorTorque * Time.fixedDeltaTime;
                 foreach (var wheelpost in vehicleData.m_Wheels)
                 {
+                    if (!vehicleData.m_isDrive) WheelComponent.Set_BrakeTorque(wheelpost, MotorTorque * 3);
                     if (wheelpost.GetChild(0))
                     {
                         Transform Wheel_BodyTarget = wheelpost.GetChild(0);
@@ -122,14 +130,13 @@ namespace vehiclemod
                         if (vehicleData.m_Type == 0) Wheel_BodyTarget.position = pos;
                         Wheel_BodyTarget.rotation = rot;
                     }
-                    if (!vehicleData.m_isDrive) WheelComponent.Set_BrakeTorque(wheelpost, MotorTorque * 3);
                     if (vehicleData.m_isDrive && main.targetcar == vehicleData.m_OwnerId && main.allowdrive)
                     {
                         WheelComponent.Set_MotorTorque(wheelpost, MotorTorque * move);
                         if (move == 0) WheelComponent.Set_BrakeTorque(wheelpost, MotorTorque * 3);
                         else WheelComponent.Set_BrakeTorque(wheelpost, 0);
                         if (vehicleData.m_Wheels_main.Contains(wheelpost)) WheelComponent.Set_SteerAngle(wheelpost, Mathf.Clamp(vehicleData.m_CurSpeed * turn + turn * 10, -45, 45));
-                        if (vehicleData.m_Type == 1) transform.rotation = Quaternion.LookRotation(wheelpost.transform.forward);
+                        if (vehicleData.m_Type == 1) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(wheelpost.transform.forward), 1f);
                     }
                 }
             }
@@ -168,17 +175,17 @@ namespace vehiclemod
 
                 newob.transform.position = sit.position;
                 newob.transform.rotation = sit.rotation;
+                newob.AddComponent<IKVH>().Init(vehicleData.m_OwnerId, where);
                 newob.SetActive(true);
             }
+            MelonLogger.Msg("[VEHICLE] Adding Passanger: " + from + "<:to:>" + where + " | VehicleBy: "+vehicleData.m_OwnerName);
             vehicleData.Passangers.Add(from, where);
         }
         public void DeletePassanger(int from)
         {
-            if (main.hook)
-            {
-                vehicleData.Passangers.TryGetValue(from, out int sit);
-                GameObject.Destroy(vehicleData.m_Sits[sit].GetChild(0).gameObject);
-            }
+            vehicleData.Passangers.TryGetValue(from, out int sit);
+            if (main.hook) GameObject.Destroy(vehicleData.m_Sits[sit].GetChild(vehicleData.m_Sits[sit].childCount-1).gameObject);
+            MelonLogger.Msg("[VEHICLE] Removing Passanger: " + from + "<:in:>" + sit + " | VehicleBy: " + vehicleData.m_OwnerName);
             vehicleData.Passangers.Remove(from);
         }
         public void UpdateDriver(bool state)
@@ -187,10 +194,7 @@ namespace vehiclemod
         }
         public bool isDrive()
         {
-            if (vehicleData.m_isDrive) return false;
-            if (!vehicleData.m_AllowDrive) return false;
-            if (vehicleData.m_AllowDrive) return true;
-            else return false;
+            return !vehicleData.m_isDrive && vehicleData.m_AllowDrive;
         }
         public int CountPassanger()
         {
@@ -215,7 +219,7 @@ namespace vehiclemod
         {
             vehicleData.m_SoundPlay = turn;
         }
-        public void DataSend(bool e)
+        public void DataSend(bool e, bool a)
         {
             if (e)
             {
@@ -224,18 +228,21 @@ namespace vehiclemod
                 NETHost.NetSound(vehicleData.m_OwnerId, vehicleData.m_SoundPlay);
                 NETHost.NetSpawnCar(vehicleData.m_OwnerId, vehicleData.m_VehicleName, transform.position, transform.rotation);
             }
-            NETHost.NetCar(vehicleData.m_OwnerId, transform.position, transform.rotation);
+            if(a || e && !vehicleData.m_isDrive) NETHost.NetCar(vehicleData.m_OwnerId, transform.position, transform.rotation);
         }
-        public void MoveIt(Vector3 Position, Quaternion Rotation)
+        public void MoveIt()
         {
-            transform.rotation = Quaternion.Lerp(transform.rotation, Rotation, 1f);
-            transform.position = Vector3.Lerp(transform.position, Position, 1f);
-            if (Vector3.Distance(transform.position, Position) > 10) transform.position = Position;
+            if(!byNet || iDrive) return;
+            transform.rotation = Quaternion.Lerp(transform.rotation, vehicleData.m_Rotation, 20f * Time.fixedDeltaTime);
+            transform.position = Vector3.Lerp(transform.position, vehicleData.m_Position, 20f * Time.fixedDeltaTime);
+            if (Vector3.Distance(transform.position, vehicleData.m_Position) > 20) transform.position = vehicleData.m_Position;
+            foreach (var wheelpost in vehicleData.m_Wheels_main)
+                WheelComponent.Set_SteerAngle(wheelpost, Mathf.Clamp(Vector2.Angle(wheelpost.transform.position, vehicleData.m_Position), -45, 45));
         }
         private bool check()
         {
             if (vehicleData == null || !enableds || !m_Rigidbody) return false;
-            else return true;
+            return true;
         }
     }
 }

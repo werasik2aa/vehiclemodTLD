@@ -20,6 +20,14 @@ namespace vehiclemod
         {
             GetObj(carid).GetComponent<VehComponent>().UpdateMainCarData(carid, allowdrive, allowsit, isDrive, sound, light, fuel, playername);
         }
+        public static void UpdateSound(int carid, bool state)
+        {
+            GetObj(carid).GetComponent<VehComponent>().UpdateSound(state);
+        }
+        public static void UpdateLight(int carid, bool state)
+        {
+            GetObj(carid).GetComponent<VehComponent>().UpdateLight(state);
+        }
         public static void UpdateDriver(int CarID, bool state)
         {
             GetObj(CarID).GetComponent<VehComponent>().UpdateDriver(state);
@@ -65,6 +73,13 @@ namespace vehiclemod
                 if (what == ff.Key) { return ff.Value; };
             }
             return "NaN";
+        }
+        public static void UpdateCar(int CarID, Vector3 Position, Quaternion Rotation)
+        {
+            GetObj(CarID).GetComponent<VehComponent>().byNet = true;
+            InfoMain data = GetObj(CarID).GetComponent<VehComponent>().vehicleData;
+            data.m_Position = Position;
+            data.m_Rotation = Rotation;
         }
     }
 }
