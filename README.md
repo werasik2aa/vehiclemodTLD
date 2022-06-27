@@ -10,4 +10,4 @@
 
 My ds nopirateonlysteam#9956
 
-TESTERS: SomeRandomNerd3 || Dungeon Master || tandash
+TESTERS: SomeRandomNerd3 || Dungeon Master || tandash || REDcat
